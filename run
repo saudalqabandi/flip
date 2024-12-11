@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# cmake -B build -S . 2>&1 | tee log.out
+# if [ ${PIPESTATUS[0]} -ne 0 ]; then
+#   echo "Configuration failed" | tee -a log.out
+#   exit 1
+# fi
+
+# cmake --build build 2>&1 | tee -a log.out
+# if [ ${PIPESTATUS[0]} -ne 0 ]; then
+#   echo "Build failed" | tee -a log.out
+#   exit 1
+# fi
+
+./buildit 2>&1 | tee log.out
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+  echo "Build failed" | tee -a log.out
+  exit 1
+fi
+
+./build/flip 2>&1 | tee -a log.out

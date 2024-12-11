@@ -1,0 +1,8 @@
+#!/bin/bash
+
+./configure
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+  echo "Configuration failed" | tee -a log.out
+  exit 1
+fi
+cmake --build build
