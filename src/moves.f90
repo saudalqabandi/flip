@@ -10,9 +10,12 @@ contains
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i
       real, intent(out) :: riNew(3)
-      real :: dr(3)
-      dr = p%drMax*(2.0*ranNum() - 1.0)
-      riNew= p%r(i, :) + dr
+      integer :: d
+
+      do d = 1, 3
+         riNew(d) = p%r(i, d) + rangeRanNum(-p%drMax, p%drMax)
+         riNew(d) = riNew(d) - anint(riNew(d)/p%lBox)*p%lBox
+      end do
    end subroutine translateMove
 
    subroutine rotateMove(p, i, uiNew)

@@ -2,7 +2,7 @@ module Potential
    use Particle
    implicit none
 
-   public :: checkOverlap, pairOverlap, pairPotential
+   ! public :: checkOverlap, pairOverlap, pairPotential, carlosCheckOverlap, carlosSingleOverlap
 contains
    function distSq(rijSq, rei, rej, eij, l) result(sijSq)
       implicit none
@@ -57,7 +57,7 @@ contains
       do i = 1, p%nParticles
          do j = i + 1, p%nParticles
             if (pairOverlap(r, u, p, i, j)) then
-               print *, 'Overlap detected between particles ', i, ' and ', j
+               ! print *, 'Overlap detected between particles ', i, ' and ', j
                p%over = .true.
                return
             end if
@@ -215,4 +215,116 @@ contains
 
    end function singleParticlePotential
 
+   real function minDist(rij, rr, ei, ej, l)
+      implicit none
+      real :: minDistance
+      real :: rui, ruj, uij
+      real :: sinsq, lambda, beta
+      real, intent(in) ::  rr, l
+      real, intent(in) ::  rij(3), ei(3), ej(3)
+
+      minDistance = 0.0d0
+
+      ! ... spherocylinder-spherocylinder criterion
+
+      rui = dot_product(rij, ei)
+      ruj = dot_product(rij, ej)
+      uij = dot_product(ei, ej)
+
+      sinsq = 1.0d0 - uij*uij
+
+      if (sinsq > 0.0d0) then
+         lambda = (ruj*uij - rui)/sinsq
+         beta = (ruj - rui*uij)/sinsq
+      else
+         lambda = 0.0d0
+         beta = 0.0d0
+      end if
+
+      if (abs(lambda) <= l .and. abs(beta) <= l) then
+         MinDistance = rr + lambda*lambda + beta*beta + 2.0d0*lambda*rui &
+                       - 2.0d0*beta*ruj - 2.0d0*lambda*beta*uij
+         return
+      end if
+
+      if (abs(lambda) >= abs(beta)) then
+         lambda = sign(l, lambda)
+         beta = ruj + lambda*uij
+      else
+         beta = sign(l, beta)
+         lambda = beta*uij - rui
+      end if
+
+      if (abs(beta) > l) beta = sign(l, beta)
+
+      if (abs(lambda) > l) lambda = sign(l, lambda)
+
+      minDistance = rr + lambda*lambda + beta*beta + 2.0d0*lambda*rui &
+                    - 2.0d0*beta*ruj - 2.0d0*lambda*beta*uij
+
+      return
+
+   end function minDist
+
+   logical function carlosPairOverlap(p, r, u, i, j)
+      type(Particles), intent(inout) :: p
+      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer :: i, j
+      real :: dd, rr, rij(3), ei(3), ej(3)
+      ! logical :: overlap
+
+      dd = 0.0
+
+      rij = r(i, :) - r(j, :)
+      rij = rij - p%lBox*anint(rij/p%lBox)
+      rr = dot_product(rij, rij)
+      ei = u(i, :)
+      ej = u(j, :)
+
+      dd = minDist(rij, rr, ei, ej, p%l)
+
+      if (dd < 1.0) then
+         carlosPairOverlap = .true.
+      else
+         carlosPairOverlap = .false.
+      end if
+
+      return
+   end function carlosPairOverlap
+
+   subroutine carlosCheckOverlap(p, r, u)
+      type(Particles), intent(inout) :: p
+      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer :: i, j
+
+      do i = 1, p%nParticles
+         do j = i + 1, p%nParticles
+            if (carlosPairOverlap(p, r, u, i, j)) then
+               print *, 'Overlap detected between particles ', i, ' and ', j
+               p%over = .true.
+               return
+            end if
+         end do
+      end do
+      p%over = .false.
+   end subroutine carlosCheckOverlap
+
+   subroutine carlosSingleOverlap(p, r, u, i)
+      type(Particles), intent(inout) :: p
+      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer, intent(in) :: i
+      integer :: j
+
+      do j = 1, p%nParticles
+         if (j /= i) then
+            if (carlosPairOverlap(p, r, u, i, j)) then
+               p%over = .true.
+               return
+            end if
+         end if
+      end do
+      p%over = .false.
+   end subroutine carlosSingleOverlap
+
 end module Potential
+

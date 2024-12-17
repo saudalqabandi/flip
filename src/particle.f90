@@ -7,7 +7,6 @@ module Particle
       real:: lBox, l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda, v0, rho, vOld, potential
       logical :: over
       real, allocatable :: r(:, :), u(:, :), q(:)
-
       character(len=50) :: setup
    end type Particles
 
