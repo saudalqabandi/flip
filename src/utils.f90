@@ -23,13 +23,13 @@ contains
    end subroutine trimQuotes
 
    function ranNum()
-      real :: ranNum
+      real(8) :: ranNum
       call random_number(ranNum)
    end function ranNum
 
    function rangeRanNum(min, max)
-      real, intent(in) :: min, max
-      real :: rangeRanNum
+      real(8), intent(in) :: min, max
+      real(8) :: rangeRanNum
       rangeRanNum = ranNum()
       rangeRanNum = rangeRanNum*(max - min) + min
    end function rangeRanNum
@@ -62,8 +62,8 @@ contains
    end subroutine createOutputDir
 
    subroutine ranVec(vec)
-      real :: ran
-      real, dimension(3), intent(out) :: vec
+      real(8) :: ran
+      real(8), dimension(3), intent(out) :: vec
       integer :: i
 
       do i = 1, 3

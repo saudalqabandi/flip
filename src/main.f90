@@ -7,12 +7,12 @@ program flip
    use Moves
    implicit none
 
-   real :: start, finish, elapsed
+   real(8) :: start, finish, elapsed
    character(len=8) :: date
    character(len=10) :: time
-   real :: pot, potNew, potOld, ran, delta, vNew, rhoNew, lBoxNew, scale, third, dH, blockEnergy, blockVolume, runEnergy, runVolume, tmpEnergy, tmpVolume, blockDensity, totalEnergy, totalDensity, totalDensitySq,rhoAvg, rhoAvgSq, errorRho, rhoStar,rhoCp
-   real, allocatable :: rNew(:, :), uNew(:, :), riNew(:), uiNew(:)
-   real :: rij(3)
+   real(8) :: pot, potNew, potOld, ran, delta, vNew, rhoNew, lBoxNew, scale, third, dH, blockEnergy, blockVolume, runEnergy, runVolume, tmpEnergy, tmpVolume, blockDensity, totalEnergy, totalDensity, totalDensitySq,rhoAvg, rhoAvgSq, errorRho, rhoStar,rhoCp
+   real(8), allocatable :: rNew(:, :), uNew(:, :), riNew(:), uiNew(:)
+   real(8) :: rij(3)
    integer :: k, n, i, blockCount, j
    logical :: accept
    character(len=25) :: moveType
@@ -53,6 +53,8 @@ program flip
       print *, 'Overlap detected in initial configuraiton. Exiting.'
       stop
    end if
+
+   stop
 
    ! p%potential = calcPotential(p, p%r, p%u)
 

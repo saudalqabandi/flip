@@ -6,15 +6,15 @@ module Potential
 contains
    function distSq(rijSq, rei, rej, eij, l) result(sijSq)
       implicit none
-      real             :: sijSq ! Returns squared distance between line segments
-      real, intent(in) :: rijSq ! Squared centre-centre distance
-      real, intent(in) :: rei    ! Scalar product rij.ei where ei is unit vector along i
-      real, intent(in) :: rej    ! Scalar product rij.ej where ej is unit vector along j
-      real, intent(in) :: eij    ! Scalar product ei.ej
-      real, intent(in) :: l    ! Line segment length
+      real(8)             :: sijSq ! Returns squared distance between line segments
+      real(8), intent(in) :: rijSq ! Squared centre-centre distance
+      real(8), intent(in) :: rei    ! Scalar product rij.ei where ei is unit vector along i
+      real(8), intent(in) :: rej    ! Scalar product rij.ej where ej is unit vector along j
+      real(8), intent(in) :: eij    ! Scalar product ei.ej
+      real(8), intent(in) :: l    ! Line segment length
 
       real            :: sinSq, ci, cj, ai, aj, di, dj, halfL
-      real, parameter :: tol = 1.e-6
+      real(8), parameter :: tol = 1.e-6
 
       sinSq = 1.0 - eij**2 ! Squared sine of angle between line segments
       halfL = l/2.0    ! Half the line segment length
@@ -51,7 +51,7 @@ contains
 
    subroutine checkOverlap(r, u, p)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer :: i, j
 
       do i = 1, p%nParticles
@@ -68,11 +68,11 @@ contains
 
    function pairOverlap(r, u, p, i, j) result(overlap)
       type(Particles), intent(in) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer, intent(in) :: i, j
 
-      real :: range, rangeBoxSq, lBoxSq, rijSq, rei, rej, eij, sijSq
-      real :: rij(3), rijPb(3), rijPbBox(3)
+      real(8) :: range, rangeBoxSq, lBoxSq, rijSq, rei, rej, eij, sijSq
+      real(8) :: rij(3), rijPb(3), rijPbBox(3)
       logical :: overlap
 
       overlap = .false.
@@ -104,9 +104,9 @@ contains
 
    function nematicPotential(p, u) result(pot)
       type(Particles), intent(in) :: p
-      real, intent(in) :: u(p%nParticles, 3)
+      real(8), intent(in) :: u(p%nParticles, 3)
       integer :: i
-      real :: pot
+      real(8) :: pot
       pot = 0.0
 
       do i = 1, p%nParticles
@@ -117,16 +117,16 @@ contains
    function pairPotential(p, r, u, i, j) result(pot)
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i, j
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       real:: rq(2, size(p%q), 3), rij(3), rijPb(3)
-      real :: rr
+      real(8) :: rr
       integer:: k, qSign, qSize, q1, q2
-      real :: pot
+      real(8) :: pot
       pot = 0.0
 
       qSize = size(p%q)
       do k = 1, qSize
-         qSign = sign(1.0, p%q(k))
+         qSign = dsign(1.0d0, p%q(k))
          rq(1, k, :) = r(i, :) + qSign*(1.0/qSize)*p%l*u(i, :)
          rq(2, k, :) = r(j, :) + qSign*(1.0/qSize)*p%l*u(j, :)
       end do
@@ -147,9 +147,9 @@ contains
 
    function calcPotential(p, r, u) result(pot)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer :: i, j
-      real :: pot
+      real(8) :: pot
 
       pot = 0.0
       do i = 1, p%nParticles
@@ -163,11 +163,11 @@ contains
    end function calcPotential
 
    subroutine metropolis(delta, p, accept)
-      real, intent(in) :: delta
+      real(8), intent(in) :: delta
       logical, intent(out) :: accept
       type(Particles), intent(inout) :: p
 
-      real :: betaDelta, ran
+      real(8) :: betaDelta, ran
 
       betaDelta = p%beta*delta
       ran = ranNum()
@@ -182,7 +182,7 @@ contains
 
    subroutine singleParticleOverlap(p, r, u, i)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer, intent(in) :: i
       integer :: j
 
@@ -200,10 +200,10 @@ contains
 
    function singleParticlePotential(p, r, u, i) result(pot)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer, intent(in) :: i
       integer :: j
-      real :: pot
+      real(8) :: pot
       pot = 0.0
 
       do j = 1, p%nParticles
@@ -215,17 +215,14 @@ contains
 
    end function singleParticlePotential
 
-   real function minDist(rij, rr, ei, ej, l)
+   real function minDistance(rij, rr, ei, ej, l)
       implicit none
-      real :: minDistance
-      real :: rui, ruj, uij
-      real :: sinsq, lambda, beta
-      real, intent(in) ::  rr, l
-      real, intent(in) ::  rij(3), ei(3), ej(3)
+      real(8) :: rui, ruj, uij
+      real(8) :: sinsq, lambda, beta
+      real(8), intent(in) ::  rr, l
+      real(8), intent(in) ::  rij(3), ei(3), ej(3)
 
       minDistance = 0.0d0
-
-      ! ... spherocylinder-spherocylinder criterion
 
       rui = dot_product(rij, ei)
       ruj = dot_product(rij, ej)
@@ -264,16 +261,20 @@ contains
 
       return
 
-   end function minDist
+   end function minDistance
 
-   logical function carlosPairOverlap(p, r, u, i, j)
+   function carlosPairOverlap(p, r, u, i, j) result(overlap)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer :: i, j
-      real :: dd, rr, rij(3), ei(3), ej(3)
-      ! logical :: overlap
+      real(8) :: dd, rr, rij(3), ei(3), ej(3)
+      logical :: overlap
 
       dd = 0.0
+
+      print *, 'Checking overlap between particles ', i, ' and ', j
+      print *, 'r(i, :) = ', r(i, :)
+      print *, 'r(j, :) = ', r(j, :)
 
       rij = r(i, :) - r(j, :)
       rij = rij - p%lBox*anint(rij/p%lBox)
@@ -281,12 +282,17 @@ contains
       ei = u(i, :)
       ej = u(j, :)
 
-      dd = minDist(rij, rr, ei, ej, p%l)
+      print *, 'rij = ', rij
+
+      print *, 'rr = ', rr
+      dd = minDistance(rij, rr, ei, ej, p%l)
+
+      print *, 'dd = ', dd
 
       if (dd < 1.0) then
-         carlosPairOverlap = .true.
+         overlap = .true.
       else
-         carlosPairOverlap = .false.
+         overlap = .false.
       end if
 
       return
@@ -294,11 +300,12 @@ contains
 
    subroutine carlosCheckOverlap(p, r, u)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer :: i, j
 
       do i = 1, p%nParticles
-         do j = i + 1, p%nParticles
+         do j = 1, p%nParticles
+            if (i == j) cycle
             if (carlosPairOverlap(p, r, u, i, j)) then
                print *, 'Overlap detected between particles ', i, ' and ', j
                p%over = .true.
@@ -311,7 +318,7 @@ contains
 
    subroutine carlosSingleOverlap(p, r, u, i)
       type(Particles), intent(inout) :: p
-      real, intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
       integer, intent(in) :: i
       integer :: j
 

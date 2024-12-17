@@ -4,9 +4,9 @@ module Particle
 
    type :: Particles
       integer :: nParticles, nCells
-      real:: lBox, l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda, v0, rho, vOld, potential
+      real(8):: lBox, l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda, v0, rho, vOld, potential
       logical :: over
-      real, allocatable :: r(:, :), u(:, :), q(:)
+      real(8), allocatable :: r(:, :), u(:, :), q(:)
       character(len=50) :: setup
    end type Particles
 
@@ -17,7 +17,7 @@ contains
       type(ConfigFile), intent(in) :: cfg
       type(Particles) :: p
 
-      real :: pi, third, lBoxMin
+      real(8) :: pi, third, lBoxMin
 
       pi = 4.0*atan(1.0)
       third = 1.0/3.0
@@ -70,7 +70,7 @@ contains
       type(Particles), intent(inout) :: p
 
       integer :: i, j
-      real, dimension(3) :: vec
+      real(8), dimension(3) :: vec
 
       ! allocate arrays
       allocate (p%r(p%nParticles, 3))
@@ -87,9 +87,9 @@ contains
 
    subroutine setupCubic(p)
 
-      real :: third, step, halfBox, x, y, z
+      real(8) :: third, step, halfBox, x, y, z
       integer :: i, j, k, n, index
-      real, dimension(3) :: vec
+      real(8), dimension(3) :: vec
 
       type(Particles), intent(inout) :: p
 

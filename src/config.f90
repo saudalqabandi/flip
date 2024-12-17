@@ -5,9 +5,9 @@ module Config
 
    type :: ConfigFile
       integer :: nParticles, seed, nCycles, nDump, nBlock, nOrder, nAdjust
-      real :: l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda
+      real(8) :: l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda
       character(len=50) :: setup, dirName, fileName
-      real, allocatable :: q(:)
+      real(8), allocatable :: q(:)
       logical :: seeded
    end type ConfigFile
 

@@ -3,7 +3,7 @@ module Accumalators
 
    type :: Accumalator
       integer :: nMoves, nTrans, nRot, nFlip, nVol, nAccept, nTransAccept, nRotAccept, nFlipAccept, nVolAccept
-      real :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
+      real(8) :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
    end type Accumalator
 
 contains

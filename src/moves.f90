@@ -9,7 +9,7 @@ contains
    subroutine translateMove(p, i, riNew)
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i
-      real, intent(out) :: riNew(3)
+      real(8), intent(out) :: riNew(3)
       integer :: d
 
       do d = 1, 3
@@ -21,8 +21,8 @@ contains
    subroutine rotateMove(p, i, uiNew)
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i
-      real, intent(inout) :: uiNew(3)
-      real :: du(3)
+      real(8), intent(inout) :: uiNew(3)
+      real(8) :: du(3)
       integer :: k
 
       call ranVec(du)
@@ -38,7 +38,7 @@ contains
    subroutine flipMove(p, i, uiNew)
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i
-      real, intent(inout) :: uiNew(3)
+      real(8), intent(inout) :: uiNew(3)
       uiNew = -p%u(i, :)
    end subroutine flipMove
 
