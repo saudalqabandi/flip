@@ -5,3 +5,5 @@ log*
 .DS_Store
 *.mod
 fort.20
+*.vtu
+*.vtk
