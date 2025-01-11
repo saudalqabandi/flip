@@ -1,10 +1,11 @@
 module Accumalators
+   use globals
    implicit none
 
-   type :: Accumalator
-      integer :: nMoves, nTrans, nRot, nFlip, nVol, nAccept, nTransAccept, nRotAccept, nFlipAccept, nVolAccept
-      real(8) :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
-   end type Accumalator
+   ! type :: Accumalator
+   !    integer :: nMoves, nTrans, nRot, nFlip, nVol, nAccept, nTransAccept, nRotAccept, nFlipAccept, nVolAccept
+   !    real(8) :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
+   ! end type Accumalator
 
 contains
 
@@ -29,22 +30,22 @@ contains
 
       select case (moveType)
 
-      case ("translate")
+       case ("translate")
          acc%nTrans = acc%nTrans + 1
          if (accept) acc%nTransAccept = acc%nTransAccept + 1
          acc%ratioTrans = acc%nTransAccept/real(acc%nTrans)
 
-      case ("rotate")
+       case ("rotate")
          acc%nRot = acc%nRot + 1
          if (accept) acc%nRotAccept = acc%nRotAccept + 1
          acc%ratioRot = acc%nRotAccept/real(acc%nRot)
 
-      case ("flip")
+       case ("flip")
          acc%nFlip = acc%nFlip + 1
          if (accept) acc%nFlipAccept = acc%nFlipAccept + 1
          acc%ratioFlip = acc%nFlipAccept/real(acc%nFlip)
 
-      case ("vol")
+       case ("vol")
          acc%nVol = acc%nVol + 1
          if (accept) acc%nVolAccept = acc%nVolAccept + 1
          acc%ratioVol = acc%nVolAccept/real(acc%nVol)

@@ -1,7 +1,6 @@
 module Moves
-   use Particle
+   use globals
    use Utils
-
    implicit none
 
 contains

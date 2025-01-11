@@ -1,4 +1,5 @@
 module Utils
+   use globals
    implicit none
 
    public :: printChar, trimQuotes, ranNum, seedRandom, ranVec
@@ -53,12 +54,12 @@ contains
       character(len=50) :: cmd
       logical :: dirExists, dirIsDir
 
-      inquire (file="output", exist=dirExists)
+      inquire (file=dirName, exist=dirExists)
       if (.not. dirExists) then
-         call system('mkdir output')
+         call system('mkdir '//trim(adjustl(dirName)))
       end if
-      cmd = 'mkdir output/'//trim(adjustl(dirName))
-      call system(cmd)
+      ! cmd = 'mkdir output/'//trim(adjustl(dirName))
+      ! call system(cmd)
    end subroutine createOutputDir
 
    subroutine ranVec(vec)
@@ -73,7 +74,123 @@ contains
       vec = vec/sqrt(sum(vec**2))
    end subroutine ranVec
 
-   !********************************************************************
+   subroutine saveVTU(p, cfg, step)
+      type(Particles), intent(in) :: p
+      type(ConfigFile), intent(inout) :: cfg
+      integer, intent(in) :: step
+      character(len=50) :: stepChar, nChar, lChar, etaChar, fileName
+      character(len=100) :: fullPath
+      integer :: ioStatus, i
+
+      ! Convert integer i to character string
+      write (stepChar, '(I0)') step
+      write (nChar, '(I0)') p%nParticles
+      write (lChar, '(F0.2)') p%l
+      write (etaChar, '(F0.2)') p%eta
+
+      fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.vtu'
+      fullPath = trim(cfg%dirName)//'/'//trim(fileName)
+
+      print *, 'Saving VTU file: ', fileName
+      print *, 'Output Directory: ', trim(cfg%dirName)
+      open (unit=10, file=fullPath, status='replace', action='write', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', fullPath
+         stop
+      end if
+
+      write (10, '(A)') '<?xml version="1.0"?>'
+      write (10, '(A)') '<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">'
+      write (10, '(A)') '  <UnstructuredGrid>'
+      write (10, '(A)') '    <Piece NumberOfPoints="'//trim(adjustl(nChar))//'" NumberOfCells="0">'
+      write (10, '(A)') '      <Points>'
+      write (10, '(A)') '        <DataArray type="Float64" NumberOfComponents="3" format="ascii">'
+      do i = 1, p%nParticles
+         write (10, '(3F10.5, 1X)') p%r(i, 1), p%r(i, 2), p%r(i, 3)
+      end do
+      write (10, '(A)') '        </DataArray>'
+      write (10, '(A)') '      </Points>'
+      write (10, '(A)') '      <PointData Vectors="orientations">'
+      write (10, '(A)') '        <DataArray type="Float64" Name="orientations" NumberOfComponents="3" format="ascii">'
+      do i = 1, p%nParticles
+         write (10, '(3F10.5)') p%u(i, 1), p%u(i, 2), p%u(i, 3)
+      end do
+      write (10, '(A)') '        </DataArray>'
+      write (10, '(A)') '      </PointData>'
+      write (10, '(A)') '    </Piece>'
+      write (10, '(A)') '  </UnstructuredGrid>'
+      write (10, '(A)') '</VTKFile>'
+
+      close (10)
+   end subroutine saveVTU
+
+
+   subroutine readVTU(file,p)
+      type(Particles), intent(inout) :: p
+      character(len=*), intent(in) :: file
+      integer :: i, ioStatus, nParticles,pos1,pos2
+      character(len=100) :: line, text
+
+      open (unit=10, file=file, status='old', action='read', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', file
+         stop
+      end if
+
+      ! Skip the header lines
+      do i = 1, 3
+         read (10, '(A)') line
+      end do
+
+      read (10, '(A)') line
+
+      pos1 = index(line, "NumberOfPoints=")
+      pos1 = pos1+1 + len("NumberOfPoints=")
+      text = line(pos1:len(line))
+      pos2 = index(text, ' ')
+      text = text(1:pos2-2)
+
+      read (text, *) nParticles
+
+      if (nParticles /= p%nParticles) then
+         print *, 'Number of particles in file does not match the number of particles specified in the config, exiting.'
+         stop
+      end if
+
+      allocate (p%r(nParticles, 3))
+      allocate (p%u(nParticles, 3))
+
+      ! skip to the start of point data
+      do i = 1, 2
+         read (10, '(A)') line
+      end do
+
+      ! read the particle positions
+      do i = 1, nParticles
+         read(10, '(A)') line
+         line = trim(line)
+         read (line, *) p%r(i, :)
+      end do
+
+      ! skip to the start of orientation data
+      do i = 1, 4
+         read (10, '(A)') line
+      end do
+
+      ! read the particle orientations
+      do i = 1, nParticles
+         read(10, '(A)') line
+         line = trim(line)
+         read (line, *) p%u(i, :)
+      end do
+
+      close (10)
+
+   end subroutine readVTU
+
+
+
+!********************************************************************
 !  ** numerical recipes routine to diagonalise a matrix            **
 !********************************************************************
    SUBROUTINE jacobi(a, n, np, d, v, nrot)
@@ -86,120 +203,120 @@ contains
       do 12 ip = 1, n
          do 11 iq = 1, n
             v(ip, iq) = 0.
-11          continue
-            v(ip, ip) = 1.
-12          continue
-            do 13 ip = 1, n
-               b(ip) = a(ip, ip)
-               d(ip) = b(ip)
-               z(ip) = 0.
-13             continue
-               nrot = 0
-               do 24 i = 1, 50
-                  sm = 0.
-                  do 15 ip = 1, n - 1
-                     do 14 iq = ip + 1, n
-                        sm = sm + abs(a(ip, iq))
-14                      continue
-15                      continue
-                        if (sm .eq. 0.) return
-                        if (i .lt. 4) then
-                           tresh = 0.2*sm/n**2
-                        else
-                           tresh = 0.
-                        end if
-                        do 22 ip = 1, n - 1
-                           do 21 iq = ip + 1, n
-                              g = 100.*abs(a(ip, iq))
-                              if ((i .gt. 4) .and. (abs(d(ip)) &
-                                                    *g .eq. abs(d(ip))) .and. (abs(d(iq)) + g .eq. abs(d(iq)))) then
-                                 a(ip, iq) = 0.
-                              else if (abs(a(ip, iq)) .gt. tresh) then
-                                 h = d(iq) - d(ip)
-                                 if (abs(h) + g .eq. abs(h)) then
-                                    t = a(ip, iq)/h
-                                 else
-                                    theta = 0.5*h/a(ip, iq)
-                                    t = 1./(abs(theta) + sqrt(1.+theta**2))
-                                    if (theta .lt. 0.) t = -t
-                                 end if
-                                 c = 1./sqrt(1 + t**2)
-                                 s = t*c
-                                 tau = s/(1.+c)
-                                 h = t*a(ip, iq)
-                                 z(ip) = z(ip) - h
-                                 z(iq) = z(iq) + h
-                                 d(ip) = d(ip) - h
-                                 d(iq) = d(iq) + h
-                                 a(ip, iq) = 0.
-                                 do 16 j = 1, ip - 1
-                                    g = a(j, ip)
-                                    h = a(j, iq)
-                                    a(j, ip) = g - s*(h + g*tau)
-                                    a(j, iq) = h + s*(g - h*tau)
-16                                  continue
-                                    do 17 j = ip + 1, iq - 1
-                                       g = a(ip, j)
-                                       h = a(j, iq)
-                                       a(ip, j) = g - s*(h + g*tau)
-                                       a(j, iq) = h + s*(g - h*tau)
-17                                     continue
-                                       do 18 j = iq + 1, n
-                                          g = a(ip, j)
-                                          h = a(iq, j)
-                                          a(ip, j) = g - s*(h + g*tau)
-                                          a(iq, j) = h + s*(g - h*tau)
-18                                        continue
-                                          do 19 j = 1, n
-                                             g = v(j, ip)
-                                             h = v(j, iq)
-                                             v(j, ip) = g - s*(h + g*tau)
-                                             v(j, iq) = h + s*(g - h*tau)
-19                                           continue
-                                             nrot = nrot + 1
-                                             end if
-21                                           continue
-22                                           continue
-                                             do 23 ip = 1, n
-                                                b(ip) = b(ip) + z(ip)
-                                                d(ip) = b(ip)
-                                                z(ip) = 0.
-23                                              continue
-24                                              continue
-                                                stop 'too many iterations in jacobi'
+11       continue
+         v(ip, ip) = 1.
+12    continue
+      do 13 ip = 1, n
+         b(ip) = a(ip, ip)
+         d(ip) = b(ip)
+         z(ip) = 0.
+13    continue
+      nrot = 0
+      do 24 i = 1, 50
+         sm = 0.
+         do 15 ip = 1, n - 1
+            do 14 iq = ip + 1, n
+               sm = sm + abs(a(ip, iq))
+14          continue
+15       continue
+         if (sm .eq. 0.) return
+         if (i .lt. 4) then
+            tresh = 0.2*sm/n**2
+         else
+            tresh = 0.
+         end if
+         do 22 ip = 1, n - 1
+            do 21 iq = ip + 1, n
+               g = 100.*abs(a(ip, iq))
+               if ((i .gt. 4) .and. (abs(d(ip)) &
+                  *g .eq. abs(d(ip))) .and. (abs(d(iq)) + g .eq. abs(d(iq)))) then
+                  a(ip, iq) = 0.
+               else if (abs(a(ip, iq)) .gt. tresh) then
+                  h = d(iq) - d(ip)
+                  if (abs(h) + g .eq. abs(h)) then
+                     t = a(ip, iq)/h
+                  else
+                     theta = 0.5*h/a(ip, iq)
+                     t = 1./(abs(theta) + sqrt(1.+theta**2))
+                     if (theta .lt. 0.) t = -t
+                  end if
+                  c = 1./sqrt(1 + t**2)
+                  s = t*c
+                  tau = s/(1.+c)
+                  h = t*a(ip, iq)
+                  z(ip) = z(ip) - h
+                  z(iq) = z(iq) + h
+                  d(ip) = d(ip) - h
+                  d(iq) = d(iq) + h
+                  a(ip, iq) = 0.
+                  do 16 j = 1, ip - 1
+                     g = a(j, ip)
+                     h = a(j, iq)
+                     a(j, ip) = g - s*(h + g*tau)
+                     a(j, iq) = h + s*(g - h*tau)
+16                continue
+                  do 17 j = ip + 1, iq - 1
+                     g = a(ip, j)
+                     h = a(j, iq)
+                     a(ip, j) = g - s*(h + g*tau)
+                     a(j, iq) = h + s*(g - h*tau)
+17                continue
+                  do 18 j = iq + 1, n
+                     g = a(ip, j)
+                     h = a(iq, j)
+                     a(ip, j) = g - s*(h + g*tau)
+                     a(iq, j) = h + s*(g - h*tau)
+18                continue
+                  do 19 j = 1, n
+                     g = v(j, ip)
+                     h = v(j, iq)
+                     v(j, ip) = g - s*(h + g*tau)
+                     v(j, iq) = h + s*(g - h*tau)
+19                continue
+                  nrot = nrot + 1
+               end if
+21          continue
+22       continue
+         do 23 ip = 1, n
+            b(ip) = b(ip) + z(ip)
+            d(ip) = b(ip)
+            z(ip) = 0.
+23       continue
+24    continue
+      stop 'too many iterations in jacobi'
 !      pause 'too many iterations in jacobi'
 !      return
-                                                END subroutine jacobi
+   END subroutine jacobi
 !  (C) Copr. 1986-92 Numerical Recipes Software Y.#?u25.){2p49.
 !********************************************************************
 !  ** numerical recipes routine to sort eigenvalues (smallest first)
 !********************************************************************
-                                                SUBROUTINE eig2srt(d, v, n, np)
-                                                   IMPLICIT NONE
+   SUBROUTINE eig2srt(d, v, n, np)
+      IMPLICIT NONE
 !     as eigsrt but opposite order
-                                                   INTEGER n, np
-                                                   real*8 d(np), v(np, np)
-                                                   INTEGER i, j, k
-                                                   real*8 p
-                                                   do 13 i = 1, n - 1
-                                                      k = i
-                                                      p = d(i)
-                                                      do 11 j = i + 1, n
-                                                         if (d(j) .lt. p) then
-                                                            k = j
-                                                            p = d(j)
-                                                         end if
-11                                                       continue
-                                                         if (k .ne. i) then
-                                                            d(k) = d(i)
-                                                            d(i) = p
-                                                            do 12 j = 1, n
-                                                               p = v(j, i)
-                                                               v(j, i) = v(j, k)
-                                                               v(j, k) = p
-12                                                             continue
-                                                               end if
-13                                                             continue
-                                                               return
-                                                               END subroutine eig2srt
-                                                               end module Utils
+      INTEGER n, np
+      real*8 d(np), v(np, np)
+      INTEGER i, j, k
+      real*8 p
+      do 13 i = 1, n - 1
+         k = i
+         p = d(i)
+         do 11 j = i + 1, n
+            if (d(j) .lt. p) then
+               k = j
+               p = d(j)
+            end if
+11       continue
+         if (k .ne. i) then
+            d(k) = d(i)
+            d(i) = p
+            do 12 j = 1, n
+               p = v(j, i)
+               v(j, i) = v(j, k)
+               v(j, k) = p
+12          continue
+         end if
+13    continue
+      return
+   END subroutine eig2srt
+end module Utils

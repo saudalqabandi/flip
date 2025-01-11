@@ -1,15 +1,7 @@
 module Config
    use Utils
+   use globals
    implicit none
-   public :: ConfigFile, readConfig
-
-   type :: ConfigFile
-      integer :: nParticles, seed, nCycles, nDump, nBlock, nOrder, nAdjust
-      real(8) :: l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda
-      character(len=50) :: setup, dirName, fileName
-      real(8), allocatable :: q(:)
-      logical :: seeded
-   end type ConfigFile
 
 contains
 
@@ -39,52 +31,54 @@ contains
             value = trim(adjustl(line(pos + 1:)))
 
             select case (var)
-            case ("nParticles")
+             case ("nParticles")
                read (value, *) cfg%nParticles
-            case ("seed")
+             case ("seed")
                read (value, *) cfg%seed
-            case ("nCycles")
+             case ("nCycles")
                read (value, *) cfg%nCycles
-            case ("nDump")
+             case ("nDump")
                read (value, *) cfg%nDump
-            case ("nBlock")
+             case ("nBlock")
                read (value, *) cfg%nBlock
-            case ("nOrder")
+             case ("nOrder")
                read (value, *) cfg%nOrder
-            case ("l")
+             case ("l")
                read (value, *) cfg%l
-            case ("pressure")
+             case ("pressure")
                read (value, *) cfg%pressure
-            case ("eta")
+             case ("eta")
                read (value, *) cfg%eta
-            case ("w0")
+             case ("w0")
                read (value, *) cfg%w0
-            case ("kappa")
+             case ("kappa")
                read (value, *) cfg%kappa
-            case ("rCut")
+             case ("rCut")
                read (value, *) cfg%rCut
-            case ("beta")
+             case ("beta")
                read (value, *) cfg%beta
-            case ("drMax")
+             case ("drMax")
                read (value, *) cfg%drMax
-            case ("dvMax")
+             case ("dvMax")
                read (value, *) cfg%dvMax
-            case ("lambda")
+             case ("lambda")
                read (value, *) cfg%lambda
-            case ("setup")
+             case ("setup")
                call trimQuotes(value)
                cfg%setup = value
-            case ("dirName")
+             case ("dirName")
                call trimQuotes(value)
                cfg%dirName = trim(value)
-            case ("fileName")
+             case ("fileName")
                call trimQuotes(value)
                cfg%fileName = value
-            case ("seeded")
+             case ("seeded")
                read (value, *) cfg%seeded
-            case ("nAdjust")
+             case ("nAdjust")
                read (value, *) cfg%nAdjust
-            case ("q")
+             case("restartStep")
+               read(value, *) cfg%restartStep
+             case ("q")
                value = trim(adjustl(value))
                numElements = count([(value(i:i) == ',', i=1, len(value))]) + 1
                allocate (cfg%q(numElements))

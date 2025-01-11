@@ -3,6 +3,7 @@ program flip
    use Utils
    use Particle
    use Potential
+   use Overlap
    use Accumalators
    use Moves
    implicit none
@@ -30,6 +31,16 @@ program flip
    time = ''
    third = 1.0/3.0
 
+   totalDensity = 0
+   totalDensitySq = 0
+   blockCount = 0
+   blockEnergy = 0
+   blockVolume = 0
+   runEnergy = 0
+   runVolume = 0
+   totalEnergy = 0
+
+
    call cpu_time(start)
    call readConfig('config.cfg', cfg)
 
@@ -38,23 +49,23 @@ program flip
       call seedRandom(cfg%seed)
    end if
 
-   ! add date and time to output directory name
-   call date_and_time(date, time)
-   cfg%dirName = trim(cfg%dirName)//'_'//trim(date)//'_'//trim(time(1:6))
-   call createOutputDir(cfg%dirName)
-
    ! initialize the particles
    p = initParticles(cfg)
-   call saveVTK(p, cfg, 0)
-   ! call checkOverlap(p%r, p%u, p)
-   call carlosCheckOverlap(p,p%r,p%u)
+
+   if (cfg%setup == 'restart') then
+      cfg%dirName = trim(cfg%dirName)//"_restart"
+      print *, 'Restart directory: ', cfg%dirName
+   end if
+
+   call createOutputDir(cfg%dirName)
+   call saveVTU(p, cfg, 0)
+   call checkOverlap(p%r,p%u,p)
+
 
    if (p%over) then
       print *, 'Overlap detected in initial configuraiton. Exiting.'
       stop
    end if
-
-   stop
 
    ! p%potential = calcPotential(p, p%r, p%u)
 
@@ -67,7 +78,6 @@ program flip
    rhoCp = 2*(sqrt(2.0) + p%l*sqrt(3.0))
 
    do n = 1, cfg%nCycles
-
       do k = 1, p%nParticles
          i = int(ranNum()*p%nParticles) + 1
 
@@ -91,18 +101,7 @@ program flip
          rNew(i, :) = riNew
          uNew(i, :) = uiNew
 
-         ! callcheckOverlap(rNew, uNew, p)
-         ! call singleParticleOverlap(p, rNew, uNew, i)
-         call carlosSingleOverlap(p, rNew, uNew, i)
-
-         ! if (p%over) then
-         !    accept = .false.
-         !    call updateAccumalators(acc, moveType, accept)
-         !    cycle
-         ! end if
-
-         ! potOld = singleParticlePotential(p, p%r, p%u, i)
-         ! potNew = singleParticlePotential(p, rNew, uNew, i)
+         call singleParticleOverlap(rNew, uNew, p, i)
 
          if (p%over) then
             accept = .false.
@@ -113,8 +112,20 @@ program flip
             call updateAccumalators(acc, moveType, accept)
          end if
 
-         !    delta = potNew - potOld
-         !    call metropolis(delta, p, accept)
+         ! potOld = singleParticlePotential(p, p%r, p%u, i)
+         ! potNew = singleParticlePotential(p, rNew, uNew, i)
+
+         ! if (p%over) then
+         !    accept = .false.
+         !    call updateAccumalators(acc, moveType, accept)
+         !    cycle
+         ! else
+         !    accept = .true.
+         !    call updateAccumalators(acc, moveType, accept)
+         ! end if
+
+         ! delta = potNew - potOld
+         ! call metropolis(delta, p, accept)
          ! call updateAccumalators(acc, moveType, accept)
 
          if (accept) then
@@ -124,12 +135,7 @@ program flip
          end if
       end do
 
-      if (n <= 500) then
-         vNew = p%vOld + p%dvMax*(2.0*ranNum() - 1.0)
-      else
-         vNew = p%vOld - (p%dvMax*ranNum())
-      end if
-
+      vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax))
       rhoNew = p%nParticles/vNew
       lBoxNew = vNew**third
       scale = lBoxNew/p%lBox
@@ -137,8 +143,7 @@ program flip
       uNew = p%u
       moveType = 'vol'
 
-      ! call checkOverlap(rNew, uNew, p)
-      call carlosCheckOverlap(p, rNew, uNew)
+      call checkOverlap(rNew, uNew, p)
       ! skip if overlap detected
       if (p%over) then
          accept = .false.
@@ -177,7 +182,7 @@ program flip
       if (mod(n, cfg%nDump) == 0) then
          print '(A, I10,A,F12.2)', 'Cycle: ', n, ' Potential: ', p%potential
          call printAccumalators(acc)
-         call saveVTK(p, cfg, n)
+         call saveVTU(p, cfg, n)
 
          rhoStar = p%rho/rhoCp
 
@@ -247,9 +252,7 @@ program flip
 
       if (mod(n, cfg%nOrder) == 0) then
          count = count + 1
-
          qSum = 0
-
          do ii = 1, p%nParticles
             do jj = 1, 3
                do kk = 1, 3
@@ -290,13 +293,26 @@ program flip
    call printChar('=', 40)
 
    call printAccumalators(acc)
-   call saveVTK(p, cfg, cfg%nCycles)
+   call saveVTU(p, cfg, cfg%nCycles)
 
-   print *, 'rhoAvg: ', rhoAvg
-   print *, 'rhoAvgSq: ', rhoAvgSq
-   print *, 'errorRho: ', errorRho
+   call printChar('-', 40)
+   print *, 'drMax: ', p%drMax
+   print *, 'dvMax: ', p%dvMax
+   print *, 'lambda: ', p%lambda
 
+   ! print *, 'rhoAvg: ', rhoAvg
+   ! print *, 'rhoAvgSq: ', rhoAvgSq
+   ! print *, 'errorRho: ', errorRho
+   call printChar('-', 80)
    print *, 'Average density: ', rhoAvg, ' +/- ', errorRho
+   print *, "Average eta: ", rhoAvg*p%v0 , ' +/- ', errorRho*p%v0
+   call printChar('-', 80)
+
+   print *, "Final volume: ", p%vOld
+   print *, "Compressibility, Z: ", p%pressure/rhoAvg
+
+   call printChar('-',80)
+
    call cpu_time(finish)
    elapsed = finish - start
    print *, 'Elapsed time: ', elapsed, ' seconds'
