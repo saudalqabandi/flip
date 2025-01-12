@@ -117,6 +117,14 @@ contains
       end do
       write (10, '(A)') '        </DataArray>'
       write (10, '(A)') '      </PointData>'
+      write (10, '(A)') '      <FieldData>'
+      write (10, '(A)') '        <DataArray type="Float64" Name="lBox" NumberOfComponents="1" format="ascii">'
+      write (10, '(F10.5)') p%lBox
+      write (10, '(A)') '        </DataArray>'
+      write (10, '(A)') '        <DataArray type="Float64" Name="eta" NumberOfComponents="1" format="ascii">'
+      write (10, '(F10.5)') p%eta
+      write (10, '(A)') '        </DataArray>'
+      write (10, '(A)') '      </FieldData>'
       write (10, '(A)') '    </Piece>'
       write (10, '(A)') '  </UnstructuredGrid>'
       write (10, '(A)') '</VTKFile>'
@@ -184,6 +192,20 @@ contains
          read (line, *) p%u(i, :)
       end do
 
+      do i = 1,4
+         read(10, '(A)') line
+      end do
+
+      read(10,'(A)') line
+      read(line,*) p%lBox
+
+      do i = 1,2
+         read(10,'(A)') line
+      end do
+
+      read(10,'(A)') line
+      read(line,*) p%eta
+      
       close (10)
 
    end subroutine readVTU

@@ -11,7 +11,7 @@ program flip
    real(8) :: start, finish, elapsed
    character(len=8) :: date
    character(len=10) :: time
-   real(8) :: pot, potNew, potOld, ran, delta, vNew, rhoNew, lBoxNew, scale, third, dH, blockEnergy, blockVolume, runEnergy, runVolume, tmpEnergy, tmpVolume, blockDensity, totalEnergy, totalDensity, totalDensitySq,rhoAvg, rhoAvgSq, errorRho, rhoStar,rhoCp
+   real(8) :: pot, potNew, potOld, ran, delta, vNew, rhoNew, lBoxNew, scale, third, dH, blockEnergy, blockVolume, runEnergy, runVolume, tmpEnergy, tmpVolume, blockDensity, totalEnergy, totalDensity, totalDensitySq,rhoAvg, rhoAvgSq, errorRho
    real(8), allocatable :: rNew(:, :), uNew(:, :), riNew(:), uiNew(:)
    real(8) :: rij(3)
    integer :: k, n, i, blockCount, j
@@ -74,8 +74,6 @@ program flip
    call printChar('=', 40)
 
    call initAccumalators(acc)
-
-   rhoCp = 2*(sqrt(2.0) + p%l*sqrt(3.0))
 
    do n = 1, cfg%nCycles
       do k = 1, p%nParticles
@@ -184,8 +182,6 @@ program flip
          call printAccumalators(acc)
          call saveVTU(p, cfg, n)
 
-         rhoStar = p%rho/rhoCp
-
          call printChar('-', 40)
          print *, 'drMax: ', p%drMax
          print *, 'dvMax: ', p%dvMax
@@ -193,7 +189,6 @@ program flip
          print *, "lBox: ", p%lBox
          print *, "vOld: ", p%vOld
          print *, "rho: ", p%rho
-         print *, 'rhoStar: ', rhoStar
 
          call printChar('-', 40)
       end if
