@@ -8,7 +8,6 @@ module globals
       character(len=50) :: setup
    end type Particles
 
-
    type :: ConfigFile
       integer :: nParticles, seed, nCycles, nDump, nBlock, nOrder, nAdjust
       real(8) :: l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda
@@ -21,5 +20,10 @@ module globals
       integer :: nMoves, nTrans, nRot, nFlip, nVol, nAccept, nTransAccept, nRotAccept, nFlipAccept, nVolAccept
       real(8) :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
    end type Accumalator
+
+   type ::  Eigen
+      real(8), dimension(3) :: seval
+      real(8), dimension(3,3) :: sevec
+   end type Eigen
 
 end module globals

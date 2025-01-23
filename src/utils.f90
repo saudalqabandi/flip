@@ -57,6 +57,8 @@ contains
       inquire (file=dirName, exist=dirExists)
       if (.not. dirExists) then
          call system('mkdir '//trim(adjustl(dirName)))
+         call system('mkdir '//trim(adjustl(dirName))//'/coords')
+         call system('mkdir '//trim(adjustl(dirName))//'/props')
       end if
       ! cmd = 'mkdir output/'//trim(adjustl(dirName))
       ! call system(cmd)
@@ -205,11 +207,216 @@ contains
 
       read(10,'(A)') line
       read(line,*) p%eta
-      
+
       close (10)
 
    end subroutine readVTU
 
+
+   subroutine copyFile(src, dst)
+      character(len=*), intent(in) :: src, dst
+      character(len=100) :: cmd
+      cmd = 'cp '//trim(adjustl(src))//' '//trim(adjustl(dst))
+      call system(cmd)
+   end subroutine copyFile
+
+   subroutine saveXYZ(p,cfg,step)
+      type(Particles), intent(in) :: p
+      type(ConfigFile), intent(in) :: cfg
+      integer, intent(in) :: step
+
+      character(len=50) :: stepChar, nChar, fileName
+      character(len=100) :: fullPath
+      integer :: ioStatus, i
+
+      ! Convert integer i to character string
+      write (stepChar, '(I0)') step
+      write (nChar, '(I0)') p%nParticles
+
+      fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.xyz'
+      fullPath = trim(cfg%dirName)//'/coords/'//trim(fileName)
+
+      print *, 'Saving XYZ file: ', fileName
+      print *, 'Output Directory: ', trim(cfg%dirName)
+      open (unit=10, file=fullPath, status='replace', action='write', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', fullPath
+         stop
+      end if
+
+      write (10, '(A)') trim(adjustl(nChar))
+      write (10, '(A)') 'Spherocylinder Position and Orientation'
+
+      do i=1,p%nParticles
+         write (10, '(A, 3F10.5, 3F10.5)') 'SC ', p%r(i, 1), p%r(i, 2), p%r(i, 3), p%u(i, 1), p%u(i, 2), p%u(i, 3)
+      end do
+
+      close(10)
+   end subroutine saveXYZ
+
+
+   subroutine readXYZ(dir,fileName,p)
+      type(Particles), intent(inout) :: p
+      character(len=*), intent(in) :: fileName,dir
+      integer :: i, ioStatus, nParticles
+      character(len=100) :: line
+      character(len=50) :: var,file
+
+      file = trim(dir)//'/coords/'//trim(fileName)//'.xyz'
+      open (unit=10, file=file, status='old', action='read', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', file
+         stop
+      end if
+
+      read (10, *) nParticles
+
+      if (nParticles /= p%nParticles) then
+         print *, 'Number of particles in file does not match the number of particles specified in the config, exiting.'
+         stop
+      end if
+
+      allocate (p%r(nParticles, 3))
+      allocate (p%u(nParticles, 3))
+
+      ! skip the comment line
+      read(10,*) line
+      print *, line
+
+      do i = 1, nParticles
+         read(10,'(A)') line
+         read(line,*) var, p%r(i, 1), p%r(i, 2), p%r(i, 3), p%u(i, 1), p%u(i, 2), p%u(i, 3)
+      end do
+
+      close (10)
+
+   end subroutine readXYZ
+
+   subroutine saveProps(p,cfg,step)
+      type(Particles), intent(in) :: p
+      type(ConfigFile), intent(in) :: cfg
+      integer, intent(in) :: step
+
+      character(len=50) :: stepChar, nChar,etaChar,lBox ,fileName
+      character(len=100) :: fullPath
+      integer :: ioStatus
+
+      ! Convert integer i to character string
+      write (stepChar, '(I0)') step
+      write (nChar, '(I0)') p%nParticles
+      write(etaChar,'(F10.5)') p%eta
+      write(lBox,'(F10.5)') p%lBox
+
+
+      fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.dat'
+      fullPath = trim(cfg%dirName)//'/props/'//trim(fileName)
+
+      print *, 'Saving props file: ', fileName
+      print *, 'Output Directory: ', trim(cfg%dirName)
+      open (unit=10, file=fullPath, status='replace', action='write', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', fullPath
+         stop
+      end if
+
+      write (10,"(A,A)") "step=",trim(adjustl(stepChar))
+      write (10, '(A, A)') 'lBox=', trim(adjustl(lBox))
+      write (10, '(A, A)') 'eta=', trim(adjustl(etaChar))
+      write (10, '(A, A)') 'nParticles=', trim(adjustl(nChar))
+
+   end subroutine saveProps
+
+
+   subroutine readProps(dir,fileName,p)
+      type(Particles), intent(inout) :: p
+      character(len=*), intent(in) :: fileName,dir
+      integer :: ioStatus,pos
+      character(len=100) :: line
+      character(len=50) :: var,value,file
+
+      file = trim(dir)//'/props/'//trim(fileName)//'.dat'
+      print *, 'Reading props file: ', file
+      open (unit=10, file=file, status='old', action='read', iostat=ioStatus)
+      if (ioStatus /= 0) then
+         print *, 'Error opening file:', file
+         stop
+      end if
+
+      do
+         read(10,'(A)') line
+         if (line == '') exit ! check if at the end of the file
+         pos = index(line, '=')
+         if (pos > 0) then
+            var = trim(adjustl(line(1:pos - 1)))
+            value = trim(adjustl(line(pos + 1:)))
+
+            ! read(line,*) var, value
+            select case (var)
+             case ('lBox=')
+               read(value,*) p%lBox
+             case ('eta=')
+               read(value,*) p%eta
+             case ('nParticles=')
+               read(value,*) p%nParticles
+            end select
+         end if
+      end do
+   end subroutine readProps
+
+
+   subroutine saveState(p,cfg,step)
+      type(Particles), intent(in) :: p
+      type(ConfigFile), intent(in) :: cfg
+      integer, intent(in) :: step
+      call saveXYZ(p,cfg,step)
+      call saveProps(p,cfg,step)
+   end subroutine saveState
+
+
+   subroutine readState(dir,fileName,p)
+      type(Particles), intent(inout) :: p
+      character(len=*), intent(in) :: dir,fileName
+
+      call readXYZ(dir,fileName,p)
+      call readProps(dir,fileName,p)
+
+   end subroutine readState
+
+
+
+   function calcEigen(p) result(eig)
+      type(Particles), intent(in) :: p
+      type(Eigen):: eig
+      real(8) :: sq, sqSq
+      real(8) :: qSum(3, 3), qRun(3, 3),frac
+      integer :: ii, jj, kk, nrot
+
+
+
+      qSum = 0
+      do ii = 1, p%nParticles
+         do jj = 1, 3
+            do kk = 1, 3
+               if (jj == kk) then
+                  frac = 0.5
+               else
+                  frac = 0
+               end if
+               qSum(jj, kk) = qSum(jj, kk) + 1.5*p%u(ii, jj)*p%u(ii, kk) - frac
+            end do
+         end do
+      end do
+      qRun = qRun + qSum
+      qSum = qSum/p%nParticles
+
+      call jacobi(qSum, 3, 3, eig%seval, eig%sevec, nrot)
+      call eig2srt(eig%seval, eig%sevec, 3, 3)
+
+      sq = sq - 2*eig%seval(2)
+      sqSq = sqSq + 4*eig%seval(2)**2
+
+
+   end function calcEigen
 
 
 !********************************************************************

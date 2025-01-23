@@ -79,7 +79,6 @@ contains
       else
          accept = .false.
       end if
-
    end subroutine metropolis
 
    function singleParticlePotential(p, r, u, i) result(pot)

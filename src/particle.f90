@@ -7,7 +7,6 @@ module Particle
 contains
 
    function initParticles(cfg) result(p)
-
       type(ConfigFile), intent(in) :: cfg
       type(Particles) :: p
 
@@ -34,6 +33,7 @@ contains
 
       ! calculate derived values
       p%v0 = (pi/6.0) + 0.25*pi*p%l
+      p%pressure = p%pressure/p%v0
       p%rho = p%eta/p%v0
       p%vOld = p%nparticles/p%rho
       p%lBox = (p%vOld)**third
@@ -105,8 +105,8 @@ contains
       allocate (p%r(p%nParticles, 3))
       allocate (p%u(p%nParticles, 3))
 
-      ! step = p%lBox/n
-      step = p%l + 1.1
+      step = p%lBox/n
+      ! step = p%l + 1.1
       halfBox = p%lBox/2.0
 
       index = 1
@@ -132,11 +132,27 @@ contains
    subroutine setupRestart(p,cfg)
       type(Particles), intent(inout) :: p
       type(ConfigFile), intent(in) :: cfg
-      character(len=50) :: file
+      character(len=50) :: file,dir
 
-      
-      file = trim(cfg%dirName)//'/'//trim(cfg%fileName)//'_'//trim(adjustl(cfg%restartStep))//'.vtu'
-      print *, 'Reading from file: ', file
-      call readVTU(file,p)
+
+      ! file = trim(cfg%dirName)//'/coords/'//trim(cfg%fileName)//'_'//trim(adjustl(cfg%restartStep))//'.xyz'
+      dir = trim(cfg%dirName)
+      file = trim(cfg%fileName)//'_'//trim(adjustl(cfg%restartStep))
+      print *, 'Reading file: ', file
+      ! call readVTU(file,p)
+
+      call readState(dir,file,p)
+
+      print *, 'Setting up restart simulation'
+      print *, p%nParticles, p%lBox
+      print *, p%r(1,1), p%r(1,2), p%r(1,3)
+      print *, p%u(1,1), p%u(1,2), p%u(1,3)
+
+      stop
+
+      ! recalculate parameters
+      ! p%rho = p%eta/p%v0
+      ! p%vOld = p%nparticles/p%rho
+      ! p%lBox = (p%vOld)**(1.0/3.0)
    end subroutine setupRestart
 end module Particle

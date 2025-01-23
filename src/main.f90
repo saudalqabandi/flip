@@ -23,6 +23,7 @@ program flip
    type(ConfigFile) :: cfg
    type(Particles) :: p
    type(Accumalator) :: acc
+   type(Eigen) :: eig
 
    start = 0.0
    finish = 0.0
@@ -58,8 +59,10 @@ program flip
    end if
 
    call createOutputDir(cfg%dirName)
-   call saveVTU(p, cfg, 0)
-   call checkOverlap(p%r,p%u,p)
+   ! call saveVTU(p, cfg, 0)
+   call saveState(p, cfg, 0)
+   call carlosCheckOverlap(p%r, p%u, p)
+   ! call checkOverlap(p%r,p%u,p)
 
 
    if (p%over) then
@@ -99,7 +102,8 @@ program flip
          rNew(i, :) = riNew
          uNew(i, :) = uiNew
 
-         call singleParticleOverlap(rNew, uNew, p, i)
+         ! call singleParticleOverlap(rNew, uNew, p, i)
+         call carlosSingleParticleOverlap(rNew, uNew, p, i)
 
          if (p%over) then
             accept = .false.
@@ -141,29 +145,31 @@ program flip
       uNew = p%u
       moveType = 'vol'
 
-      call checkOverlap(rNew, uNew, p)
+      ! call checkOverlap(rNew, uNew, p)
+      call carlosCheckOverlap(rNew, uNew, p)
       ! skip if overlap detected
       if (p%over) then
          accept = .false.
          call updateAccumalators(acc, moveType, accept)
          cycle
-      else
-         accept = .true.
-         call updateAccumalators(acc, moveType, accept)
+         ! else
+         !    accept = .true.
+         !    call updateAccumalators(acc, moveType, accept)
       end if
 
       ! potOld = p%potential
       ! potNew = calcPotential(p, rNew, uNew)
       ! delta = potNew - potOld
 
-      ! dH = delta + p%pressure*(vNew - p%vOld) - p%nParticles*log(vNew/p%vOld)
+      delta = 0;
+      dH = delta + p%pressure*(vNew - p%vOld) - p%nParticles*log(vNew/p%vOld)
 
       ! print *, "potNew: ", potNew
 
       ! print *, "potential: ", p%potential
 
-      ! call metropolis(dH, p, accept)
-      ! call updateAccumalators(acc, moveType, accept)
+      call metropolis(dH, p, accept)
+      call updateAccumalators(acc, moveType, accept)
 
       ! print *, 'Cycle: ', n, ' Potential: ', p%potential, ' potNew: ', potNew
 
@@ -175,12 +181,14 @@ program flip
          p%vOld = vNew
          p%rho = rhoNew
          p%lBox = lBoxNew
+         p%eta = rhoNew * p%v0
       end if
 
       if (mod(n, cfg%nDump) == 0) then
          print '(A, I10,A,F12.2)', 'Cycle: ', n, ' Potential: ', p%potential
          call printAccumalators(acc)
-         call saveVTU(p, cfg, n)
+         ! call saveVTU(p, cfg, n)
+         call saveState(p, cfg, n)
 
          call printChar('-', 40)
          print *, 'drMax: ', p%drMax
@@ -189,7 +197,7 @@ program flip
          print *, "lBox: ", p%lBox
          print *, "vOld: ", p%vOld
          print *, "rho: ", p%rho
-
+         print *, "eta: ", p%eta
          call printChar('-', 40)
       end if
 
@@ -247,34 +255,37 @@ program flip
 
       if (mod(n, cfg%nOrder) == 0) then
          count = count + 1
-         qSum = 0
-         do ii = 1, p%nParticles
-            do jj = 1, 3
-               do kk = 1, 3
-                  if (jj == kk) then
-                     frac = 0.5
-                  else
-                     frac = 0
-                  end if
-                  qSum(jj, kk) = qSum(jj, kk) + 1.5*p%u(ii, jj)*p%u(ii, kk) - frac
-               end do
-            end do
-         end do
-         qRun = qRun + qSum
-         qSum = qSum/p%nParticles
+         ! qSum = 0
+         ! do ii = 1, p%nParticles
+         !    do jj = 1, 3
+         !       do kk = 1, 3
+         !          if (jj == kk) then
+         !             frac = 0.5
+         !          else
+         !             frac = 0
+         !          end if
+         !          qSum(jj, kk) = qSum(jj, kk) + 1.5*p%u(ii, jj)*p%u(ii, kk) - frac
+         !       end do
+         !    end do
+         ! end do
+         ! qRun = qRun + qSum
+         ! qSum = qSum/p%nParticles
 
-         call jacobi(qSum, 3, 3, seval, sevec, nrot)
-         call eig2srt(seval, sevec, 3, 3)
+         ! call jacobi(qSum, 3, 3, seval, sevec, nrot)
+         ! call eig2srt(seval, sevec, 3, 3)
 
-         sq = sq - 2*seval(2)
-         sqSq = sqSq + 4*seval(2)**2
+         ! sq = sq - 2*seval(2)
+         ! sqSq = sqSq + 4*seval(2)**2
+
+         eig = calcEigen(p)
+
          write (*, *) ' SORTED OVERALL EIGENVECTORS FOR Q'
          do i = 1, 3
-            write (*, '(1X,A,I3,A,F12.6)') 'EIGENVALUE', i, '=', SEVAL(I)
+            write (*, '(1X,A,I3,A,F12.6)') 'EIGENVALUE', i, '=', eig%seval(i)
             write (*, *) ' EIGENVECTOR'
-            write (*, '(10X,5F12.6)') (SEVEC(j, i), j=1, 3)
+            write (*, '(10X,5F12.6)') (eig%sevec(j, i), j=1, 3)
          end do
-         print *, 'Nematic order parameter configuration', -2*seval(2)
+         print *, 'Nematic order parameter configuration', -2*eig%seval(2)
       end if
 
    end do
@@ -288,7 +299,7 @@ program flip
    call printChar('=', 40)
 
    call printAccumalators(acc)
-   call saveVTU(p, cfg, cfg%nCycles)
+   call saveState(p, cfg, cfg%nCycles)
 
    call printChar('-', 40)
    print *, 'drMax: ', p%drMax
@@ -308,8 +319,12 @@ program flip
 
    call printChar('-',80)
 
+   call copyFile('log.out', trim(cfg%dirName)//'/log.out')
+   call copyFile('config.cfg',trim(cfg%dirName)//'/config.cfg')
+
    call cpu_time(finish)
    elapsed = finish - start
    print *, 'Elapsed time: ', elapsed, ' seconds'
+
 
 end program flip

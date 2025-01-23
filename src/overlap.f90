@@ -91,6 +91,9 @@ contains
       do i = 1, p%nParticles
          do j = i + 1, p%nParticles
             if (pairOverlap(r, u, p, i, j)) then
+               print *, "Overlap between particles in Allen and Tildesly routine: ",i,j
+               print *, "r(i): ",r(i,:), "u(i): ",u(i,:)
+               print *, "r(j): ",r(j,:), "u(j): ",u(j,:)
                p%over = .true.
                return
             end if
@@ -118,6 +121,159 @@ contains
       end do
       p%over = .false.
    end subroutine singleParticleOverlap
+
+   subroutine carlosSingleParticleOverlap(r,u,p,i)
+      type(Particles), intent(inout) :: p
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer, intent(in) :: i
+
+      integer :: j
+
+      do j = 1, p%nParticles
+         if (i /= j) then
+            if (carlosPairOverlap(r,u,p,i,j)) then
+               ! print *, 'Overlap detected between particles ', i, ' and ', j
+               p%over = .true.
+               return
+            end if
+         end if
+      end do
+
+      p%over = .false.
+   end subroutine carlosSingleParticleOverlap
+
+   subroutine carlosCheckOverlap(r,u,p)
+      type(Particles), intent(inout) :: p
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer :: i, j
+
+      do i = 1, p%nParticles
+         do j = i + 1, p%nParticles
+            if (carlosPairOverlap(r,u,p,i,j)) then
+               print *, "Overlap between particles in carlos routine: ",i,j
+               print *, "r(i): ",r(i,:), "u(i): ",u(i,:)
+               print *, "r(j): ",r(j,:), "u(j): ",u(j,:)
+               p%over = .true.
+               return
+            end if
+         end do
+      end do
+      p%over = .false.
+   end subroutine carlosCheckOverlap
+
+
+   function carlosPairOverlap(r,u,p,i,j) result(overlap)
+      implicit none
+      type(Particles), intent(inout) :: p
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      integer, intent(in) :: i, j
+      logical :: overlap
+      real(8) :: rij(3), rr, dd,dd2, range,ui(3),uj(3)
+
+
+      range = 1.0d0 + p%l
+      overlap = .false.
+
+      ! if (i==1 .and. j==2) then
+      !    print *, "debugging particles: ",i,j
+      ! end if
+
+      rij = r(j,:) - r(i,:)
+      rij = rij - anint(rij/p%lBox)*p%lBox
+      rr = dot_product(rij,rij)
+      
+
+      ui = u(i,:)
+      uj = u(j,:)
+
+      if (rr <= range**2) then
+         dd = minDistance(rij,rr,ui,uj,p%l*0.5)
+         dd2 = shortestDistance(rij,ui,uj,p%l*0.5)
+
+         if (dd < 1.0) then
+            ! print *, "Overlap, Carlos dd: ",dd
+            overlap = .true.
+         end if
+
+         ! if (dd2 < 1.0) then
+         !    print *, "Overlap, shortestDistance dd: ",dd2
+         !    overlap = .true.
+         ! end if
+
+      end if
+
+      return
+   end function carlosPairOverlap
+
+   real(8) function minDistance( rij, rr, eParti, ePartj, ld)
+      implicit none
+      real(8) :: rui, ruj, uij
+      real(8) :: sinsq, lambda, beta
+      real(8), intent(in) ::  rr, ld
+      real(8), intent(in) ::  rij(3), ePartI(3), ePartJ(3)
+
+
+      minDistance = 0.0d0
+
+      ! ... spherocylinder-spherocylinder criterion
+
+      rui = dot_product(rij,ePartI)
+      ruj = dot_product(rij,ePartJ)
+      uij = dot_product(ePartI,ePartJ)
+
+
+      sinsq = 1.0d0 - uij*uij
+
+      if( sinsq > 0.0d0 ) then
+         lambda = ( ruj*uij - rui )/sinsq
+         beta = ( ruj - rui*uij )/sinsq
+      else
+         lambda = 0.0d0
+         beta = 0.0d0
+      end if
+
+      if( dabs( lambda ) <= ld .and. dabs( beta ) <= ld ) then
+         MinDistance = rr + lambda*lambda + beta*beta + 2.0d0*lambda*rui &
+            - 2.0d0*beta*ruj - 2.0d0*lambda*beta*uij
+         return
+      end if
+
+      if( dabs( lambda ) >=  dabs( beta ) ) then
+         lambda = dsign( ld, lambda )
+         beta = ruj + lambda*uij
+      else
+         beta = dsign( ld, beta )
+         lambda = beta*uij - rui
+      end if
+
+      if( dabs( beta ) > ld ) beta = dsign( ld, beta )
+
+      if( dabs( lambda ) > ld ) lambda = dsign( ld, lambda )
+
+
+      minDistance = rr + lambda*lambda + beta*beta + 2.0d0*lambda*rui &
+         - 2.0d0*beta*ruj - 2.0d0*lambda*beta*uij
+
+      return
+
+
+   end function minDistance
+
+
+   function shortestDistance(rij,ui,uj,halfL) result (distance)
+      real(8), intent(in) :: rij(3), ui(3), uj(3), halfL
+      real(8) :: rr, rui, ruj, uij
+      real(8) :: xLanda, xMu,aux1,aux2,cc,distance
+      real(8) :: tol = 1.0d-6
+
+      rr = dot_product(rij,rij)
+      rui = dot_product(rij,ui)
+      ruj = dot_product(rij,uj)
+      uij = dot_product(ui,uj)
+
+      cc = 1.0d0 - uij**2
+
+   end function shortestDistance
 
 
 end module Overlap
