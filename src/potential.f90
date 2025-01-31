@@ -74,11 +74,12 @@ contains
       betaDelta = p%beta*delta
       ran = ranNum()
 
-      if (betaDelta < 0.0 .or. exp(-betaDelta) > ran) then
-         accept = .true.
-      else
-         accept = .false.
-      end if
+      accept = (betaDelta < 0.0 .or. exp(-betaDelta) > ran)
+      ! if (betaDelta < 0.0 .or. exp(-betaDelta) > ran) then
+      !    accept = .true.
+      ! else
+      !    accept = .false.
+      ! end if
    end subroutine metropolis
 
    function singleParticlePotential(p, r, u, i) result(pot)

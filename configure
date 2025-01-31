@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cmake -B build -S .
+cmake -B build -S . -DCMAKE_PREFIX_PATH=./external/pFUnit/build/installed
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
   echo "Configuration failed" | tee -a log.out
   exit 1

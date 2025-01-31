@@ -91,10 +91,8 @@ contains
       write (etaChar, '(F0.2)') p%eta
 
       fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.vtu'
-      fullPath = trim(cfg%dirName)//'/'//trim(fileName)
+      fullPath = trim(cfg%dirName)//'/coords/'//trim(fileName)
 
-      print *, 'Saving VTU file: ', fileName
-      print *, 'Output Directory: ', trim(cfg%dirName)
       open (unit=10, file=fullPath, status='replace', action='write', iostat=ioStatus)
       if (ioStatus /= 0) then
          print *, 'Error opening file:', fullPath
@@ -119,14 +117,14 @@ contains
       end do
       write (10, '(A)') '        </DataArray>'
       write (10, '(A)') '      </PointData>'
-      write (10, '(A)') '      <FieldData>'
-      write (10, '(A)') '        <DataArray type="Float64" Name="lBox" NumberOfComponents="1" format="ascii">'
-      write (10, '(F10.5)') p%lBox
-      write (10, '(A)') '        </DataArray>'
-      write (10, '(A)') '        <DataArray type="Float64" Name="eta" NumberOfComponents="1" format="ascii">'
-      write (10, '(F10.5)') p%eta
-      write (10, '(A)') '        </DataArray>'
-      write (10, '(A)') '      </FieldData>'
+      ! write (10, '(A)') '      <FieldData>'
+      ! write (10, '(A)') '        <DataArray type="Float64" Name="lBox" NumberOfComponents="1" format="ascii">'
+      ! write (10, '(F10.5)') p%lBox
+      ! write (10, '(A)') '        </DataArray>'
+      ! write (10, '(A)') '        <DataArray type="Float64" Name="eta" NumberOfComponents="1" format="ascii">'
+      ! write (10, '(F10.5)') p%eta
+      ! write (10, '(A)') '        </DataArray>'
+      ! write (10, '(A)') '      </FieldData>'
       write (10, '(A)') '    </Piece>'
       write (10, '(A)') '  </UnstructuredGrid>'
       write (10, '(A)') '</VTKFile>'
@@ -135,12 +133,16 @@ contains
    end subroutine saveVTU
 
 
-   subroutine readVTU(file,p)
+   subroutine readVTU(dir,fileName,p)
       type(Particles), intent(inout) :: p
-      character(len=*), intent(in) :: file
+      character(len=*), intent(in) :: fileName
+      character(len=*), intent(in) :: dir
+      character(len=50) :: file
       integer :: i, ioStatus, nParticles,pos1,pos2
       character(len=100) :: line, text
 
+      file = trim(dir)//'/coords/'//trim(fileName)//'.vtu'
+      print *, 'Reading props file: ', file
       open (unit=10, file=file, status='old', action='read', iostat=ioStatus)
       if (ioStatus /= 0) then
          print *, 'Error opening file:', file
@@ -194,19 +196,19 @@ contains
          read (line, *) p%u(i, :)
       end do
 
-      do i = 1,4
-         read(10, '(A)') line
-      end do
+      ! do i = 1,4
+      !    read(10, '(A)') line
+      ! end do
 
-      read(10,'(A)') line
-      read(line,*) p%lBox
+      ! read(10,'(A)') line
+      ! read(line,*) p%lBox
 
-      do i = 1,2
-         read(10,'(A)') line
-      end do
+      ! do i = 1,2
+      !    read(10,'(A)') line
+      ! end do
 
-      read(10,'(A)') line
-      read(line,*) p%eta
+      ! read(10,'(A)') line
+      ! read(line,*) p%eta
 
       close (10)
 
@@ -311,8 +313,6 @@ contains
       fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.dat'
       fullPath = trim(cfg%dirName)//'/props/'//trim(fileName)
 
-      print *, 'Saving props file: ', fileName
-      print *, 'Output Directory: ', trim(cfg%dirName)
       open (unit=10, file=fullPath, status='replace', action='write', iostat=ioStatus)
       if (ioStatus /= 0) then
          print *, 'Error opening file:', fullPath
@@ -330,7 +330,7 @@ contains
    subroutine readProps(dir,fileName,p)
       type(Particles), intent(inout) :: p
       character(len=*), intent(in) :: fileName,dir
-      integer :: ioStatus,pos
+      integer :: ioStatus,pos,i
       character(len=100) :: line
       character(len=50) :: var,value,file
 
@@ -342,7 +342,7 @@ contains
          stop
       end if
 
-      do
+      do i = 1, 4
          read(10,'(A)') line
          if (line == '') exit ! check if at the end of the file
          pos = index(line, '=')
@@ -366,9 +366,9 @@ contains
 
    subroutine saveState(p,cfg,step)
       type(Particles), intent(in) :: p
-      type(ConfigFile), intent(in) :: cfg
+      type(ConfigFile), intent(inout) :: cfg
       integer, intent(in) :: step
-      call saveXYZ(p,cfg,step)
+      call saveVTU(p,cfg,step)
       call saveProps(p,cfg,step)
    end subroutine saveState
 
@@ -377,7 +377,7 @@ contains
       type(Particles), intent(inout) :: p
       character(len=*), intent(in) :: dir,fileName
 
-      call readXYZ(dir,fileName,p)
+      call readVTU(dir,fileName,p)
       call readProps(dir,fileName,p)
 
    end subroutine readState

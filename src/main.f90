@@ -6,6 +6,7 @@ program flip
    use Overlap
    use Accumalators
    use Moves
+   use globals
    implicit none
 
    real(8) :: start, finish, elapsed
@@ -64,7 +65,6 @@ program flip
    call carlosCheckOverlap(p%r, p%u, p)
    ! call checkOverlap(p%r,p%u,p)
 
-
    if (p%over) then
       print *, 'Overlap detected in initial configuraiton. Exiting.'
       stop
@@ -76,7 +76,7 @@ program flip
    print *, 'Initial potential: ', p%potential
    call printChar('=', 40)
 
-   call initAccumalators(acc)
+   call zeroAccumalators(acc)
 
    do n = 1, cfg%nCycles
       do k = 1, p%nParticles
@@ -114,22 +114,6 @@ program flip
             call updateAccumalators(acc, moveType, accept)
          end if
 
-         ! potOld = singleParticlePotential(p, p%r, p%u, i)
-         ! potNew = singleParticlePotential(p, rNew, uNew, i)
-
-         ! if (p%over) then
-         !    accept = .false.
-         !    call updateAccumalators(acc, moveType, accept)
-         !    cycle
-         ! else
-         !    accept = .true.
-         !    call updateAccumalators(acc, moveType, accept)
-         ! end if
-
-         ! delta = potNew - potOld
-         ! call metropolis(delta, p, accept)
-         ! call updateAccumalators(acc, moveType, accept)
-
          if (accept) then
             p%r = rNew
             p%u = uNew
@@ -137,7 +121,7 @@ program flip
          end if
       end do
 
-      vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax))
+      vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax)*p%vOld)
       rhoNew = p%nParticles/vNew
       lBoxNew = vNew**third
       scale = lBoxNew/p%lBox
@@ -145,36 +129,19 @@ program flip
       uNew = p%u
       moveType = 'vol'
 
-      ! call checkOverlap(rNew, uNew, p)
       call carlosCheckOverlap(rNew, uNew, p)
       ! skip if overlap detected
       if (p%over) then
          accept = .false.
          call updateAccumalators(acc, moveType, accept)
-         cycle
-         ! else
-         !    accept = .true.
-         !    call updateAccumalators(acc, moveType, accept)
+      else
+         delta = 0;
+         dH = delta + p%pressure*(vNew - p%vOld) - p%nParticles*log(vNew/p%vOld)
+         call metropolis(dH, p, accept)
+         call updateAccumalators(acc, moveType, accept)
       end if
 
-      ! potOld = p%potential
-      ! potNew = calcPotential(p, rNew, uNew)
-      ! delta = potNew - potOld
-
-      delta = 0;
-      dH = delta + p%pressure*(vNew - p%vOld) - p%nParticles*log(vNew/p%vOld)
-
-      ! print *, "potNew: ", potNew
-
-      ! print *, "potential: ", p%potential
-
-      call metropolis(dH, p, accept)
-      call updateAccumalators(acc, moveType, accept)
-
-      ! print *, 'Cycle: ', n, ' Potential: ', p%potential, ' potNew: ', potNew
-
       if (accept) then
-         ! print *, "Accepted volume change"
          p%r = rNew
          p%u = uNew
          p%potential = potNew
@@ -183,11 +150,11 @@ program flip
          p%lBox = lBoxNew
          p%eta = rhoNew * p%v0
       end if
-
+      
       if (mod(n, cfg%nDump) == 0) then
          print '(A, I10,A,F12.2)', 'Cycle: ', n, ' Potential: ', p%potential
          call printAccumalators(acc)
-         ! call saveVTU(p, cfg, n)
+
          call saveState(p, cfg, n)
 
          call printChar('-', 40)
@@ -202,38 +169,36 @@ program flip
       end if
 
       if (mod(n, cfg%nAdjust) == 0) then
-
-         if (acc%ratioTrans > 0.5) then
-            p%drMax = p%drMax*1.1
-         else
-            p%drMax = p%drMax*0.9
+         if (p%drMax <= p%lBox) then
+            if (acc%ratioTrans > 0.5) then
+               p%drMax = p%drMax*1.1
+            else
+               p%drMax = p%drMax*0.9
+            end if
          end if
 
-         if (acc%ratioRot > 0.5) then
-            p%lambda = p%lambda*1.1
-         else
-            p%lambda = p%lambda*0.9
+         if (p%lambda <= p%lBox) then
+            if (acc%ratioRot > 0.5) then
+               p%lambda = p%lambda*1.1
+            else
+               p%lambda = p%lambda*0.9
+            end if
          end if
 
-         if (acc%ratioVol > 0.5) then
-            p%dvMax = p%dvMax*1.1
-         else
-            p%dvMax = p%dvMax*0.9
+         if (p%dvMax <= p%lBox) then
+            if (acc%ratioVol > 0.5) then
+               p%dvMax = p%dvMax*1.1
+            else
+               p%dvMax = p%dvMax*0.9
+            end if
          end if
-
       end if
 
-      ! blockEnergy = blockEnergy + p%potential
       blockVolume = blockVolume + p%vold
-
-      ! runEnergy = runEnergy + p%potential
       runVolume = runVolume + p%vold
 
       if (mod(n, cfg%nBlock) == 0) then
          blockCount = blockCount + 1
-         ! blockEnergy = blockEnergy/(cfg%nBlock*p%nParticles)
-         ! totalEnergy = totalEnergy + blockEnergy
-         ! tmpEnergy = runEnergy/(n*p%nParticles)
 
          blockVolume = blockVolume/(cfg%nBlock)
          tmpVolume = runVolume/n
@@ -241,41 +206,17 @@ program flip
          totalDensity = totalDensity + blockDensity
          totalDensitySq = totalDensitySq + blockDensity**2
 
-         write (*, *) 'Cycle number = ', n
-         ! write (*, *) 'Block average beta*energy/n = ', blockEnergy
-         ! write (*, *) 'Run average beta*energy/n = ', tmpEnergy
          write (20, '(i7, 1x, 2(f12.3, 1x))') blockCount, blockEnergy, tmpEnergy
          write (*, *) 'Block average volume = ', blockVolume
          write (*, *) 'Block average density = ', blockDensity
          write (*, *) 'Run average volume = ', tmpVolume
          write (*, *) 'Run average density = ', p%nParticles/tmpVolume
          write (20, '(i7, 1x, 2(f12.3, 1x))') blockCount, blockVolume, tmpVolume
-
+         call zeroAccumalators(acc)
       end if
 
       if (mod(n, cfg%nOrder) == 0) then
          count = count + 1
-         ! qSum = 0
-         ! do ii = 1, p%nParticles
-         !    do jj = 1, 3
-         !       do kk = 1, 3
-         !          if (jj == kk) then
-         !             frac = 0.5
-         !          else
-         !             frac = 0
-         !          end if
-         !          qSum(jj, kk) = qSum(jj, kk) + 1.5*p%u(ii, jj)*p%u(ii, kk) - frac
-         !       end do
-         !    end do
-         ! end do
-         ! qRun = qRun + qSum
-         ! qSum = qSum/p%nParticles
-
-         ! call jacobi(qSum, 3, 3, seval, sevec, nrot)
-         ! call eig2srt(seval, sevec, 3, 3)
-
-         ! sq = sq - 2*seval(2)
-         ! sqSq = sqSq + 4*seval(2)**2
 
          eig = calcEigen(p)
 
@@ -298,7 +239,6 @@ program flip
    print *, 'Final potential: ', p%potential
    call printChar('=', 40)
 
-   call printAccumalators(acc)
    call saveState(p, cfg, cfg%nCycles)
 
    call printChar('-', 40)
@@ -306,9 +246,6 @@ program flip
    print *, 'dvMax: ', p%dvMax
    print *, 'lambda: ', p%lambda
 
-   ! print *, 'rhoAvg: ', rhoAvg
-   ! print *, 'rhoAvgSq: ', rhoAvgSq
-   ! print *, 'errorRho: ', errorRho
    call printChar('-', 80)
    print *, 'Average density: ', rhoAvg, ' +/- ', errorRho
    print *, "Average eta: ", rhoAvg*p%v0 , ' +/- ', errorRho*p%v0
@@ -317,10 +254,23 @@ program flip
    print *, "Final volume: ", p%vOld
    print *, "Compressibility, Z: ", p%pressure/rhoAvg
 
+
+   call printChar('-', 80)
+   print *, "Final Eigenvalues"
+   eig = calcEigen(p)
+
+   write (*, *) ' SORTED OVERALL EIGENVECTORS FOR Q'
+   do i = 1, 3
+      write (*, '(1X,A,I3,A,F12.6)') 'EIGENVALUE', i, '=', eig%seval(i)
+      write (*, *) ' EIGENVECTOR'
+      write (*, '(10X,5F12.6)') (eig%sevec(j, i), j=1, 3)
+   end do
+   print *, 'Nematic order parameter configuration', -2*eig%seval(2)
+
    call printChar('-',80)
 
    call copyFile('log.out', trim(cfg%dirName)//'/log.out')
-   call copyFile('config.cfg',trim(cfg%dirName)//'/config.cfg')
+   call copyFile('config.cfg',trim(cfg%dirName)//'/config.txt')
 
    call cpu_time(finish)
    elapsed = finish - start

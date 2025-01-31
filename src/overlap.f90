@@ -150,9 +150,6 @@ contains
       do i = 1, p%nParticles
          do j = i + 1, p%nParticles
             if (carlosPairOverlap(r,u,p,i,j)) then
-               print *, "Overlap between particles in carlos routine: ",i,j
-               print *, "r(i): ",r(i,:), "u(i): ",u(i,:)
-               print *, "r(j): ",r(j,:), "u(j): ",u(j,:)
                p%over = .true.
                return
             end if

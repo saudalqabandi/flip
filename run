@@ -12,10 +12,19 @@
 #   exit 1
 # fi
 
-./buildit 2>&1 | tee log.out
+if [ "$1" != "Release" ] && [ "$1" != "Debug" ]; then
+  echo "Invalid argument. Please specify 'Release' or 'Debug'."
+  exit 1
+fi
+
+./buildit 2>&1 
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
   echo "Build failed" | tee -a log.out
   exit 1
+fi
+
+if [ -f log.out ]; then
+  rm log.out
 fi
 
 ./build/flip 2>&1 | tee -a log.out

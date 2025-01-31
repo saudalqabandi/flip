@@ -38,6 +38,8 @@ contains
       p%vOld = p%nparticles/p%rho
       p%lBox = (p%vOld)**third
 
+
+
       p%over = .false.
 
       ! setup the particles
@@ -142,13 +144,6 @@ contains
       ! call readVTU(file,p)
 
       call readState(dir,file,p)
-
-      print *, 'Setting up restart simulation'
-      print *, p%nParticles, p%lBox
-      print *, p%r(1,1), p%r(1,2), p%r(1,3)
-      print *, p%u(1,1), p%u(1,2), p%u(1,3)
-
-      stop
 
       ! recalculate parameters
       ! p%rho = p%eta/p%v0

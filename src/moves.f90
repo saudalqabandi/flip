@@ -41,4 +41,20 @@ contains
       uiNew = -p%u(i, :)
    end subroutine flipMove
 
+
+   subroutine volumeMove(p,rNew)
+      type(Particles), intent(in) :: p
+      real(8), intent(inout) :: rNew(3,p%nParticles)
+      real(8) :: lBoxNew, vNew, dV,third,rhoNew, scale
+
+      third = 1.0/3.0
+      dV = rangeRanNum(-p%dvMax, p%dvMax) * p%vOld
+      vNew = p%vOld + dV
+      rhoNew = p%nParticles/vNew
+      lBoxNew = vNew**third
+      scale = lBoxNew/p%lBox
+      rNew = rNew*scale
+      ! rNew = p%r*scale
+   end subroutine volumeMove
+
 end module Moves

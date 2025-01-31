@@ -1,15 +1,9 @@
 module Accumalators
    use globals
    implicit none
-
-   ! type :: Accumalator
-   !    integer :: nMoves, nTrans, nRot, nFlip, nVol, nAccept, nTransAccept, nRotAccept, nFlipAccept, nVolAccept
-   !    real(8) :: ratioTrans, ratioRot, ratioFlip, ratioVol, ratio
-   ! end type Accumalator
-
 contains
 
-   subroutine initAccumalators(acc)
+   subroutine zeroAccumalators(acc)
       type(Accumalator), intent(out) :: acc
       acc%nMoves = 0
       acc%nTrans = 0
@@ -21,7 +15,10 @@ contains
       acc%nRotAccept = 0
       acc%nFlipAccept = 0
       acc%nVolAccept = 0
-   end subroutine initAccumalators
+      acc%ratioTrans = 0.0
+      acc%ratioRot = 0.0
+      acc%ratioFlip = 0.0
+   end subroutine zeroAccumalators
 
    subroutine updateAccumalators(acc, moveType, accept)
       type(Accumalator), intent(inout) :: acc

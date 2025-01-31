@@ -1,0 +1,10 @@
+set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+file(GLOB_RECURSE FORTRAN_SOURCES "${SOURCE_DIR}/*.f90")
+
+add_library(flipLib ${FORTRAN_SOURCES})
+
+set_target_properties (flipLib PROPERTIES
+  Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+target_include_directories(flipLib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

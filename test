@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+./buildit 2>&1 
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+  echo "Build failed" | tee -a log.out
+  exit 1
+fi
+
+./build/flip_tests
