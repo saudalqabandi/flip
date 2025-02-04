@@ -88,15 +88,15 @@ program flip
          riNew = rNew(i, :)
          uiNew = uNew(i, :)
 
-         if (ran < 1.0/3.0) then
+         if (ran < 1.0/2.0) then
             call translateMove(p, i, riNew)
             moveType = 'translate'
-         else if (ran < 2.0/3.0) then
+         else
             call rotateMove(p, i, uiNew)
             moveType = 'rotate'
-         else
-            call flipMove(p, i, uiNew)
-            moveType = 'flip'
+            ! else
+            !    call flipMove(p, i, uiNew)
+            !    moveType = 'flip'
          end if
 
          rNew(i, :) = riNew
@@ -121,7 +121,8 @@ program flip
          end if
       end do
 
-      vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax)*p%vOld)
+      ! vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax)*p%vOld)
+      vNew = p%vOld+(rangeRanNum(-p%dvMax, p%dvMax))
       rhoNew = p%nParticles/vNew
       lBoxNew = vNew**third
       scale = lBoxNew/p%lBox
@@ -150,7 +151,7 @@ program flip
          p%lBox = lBoxNew
          p%eta = rhoNew * p%v0
       end if
-      
+
       if (mod(n, cfg%nDump) == 0) then
          print '(A, I10,A,F12.2)', 'Cycle: ', n, ' Potential: ', p%potential
          call printAccumalators(acc)
@@ -169,28 +170,22 @@ program flip
       end if
 
       if (mod(n, cfg%nAdjust) == 0) then
-         if (p%drMax <= p%lBox) then
-            if (acc%ratioTrans > 0.5) then
-               p%drMax = p%drMax*1.1
-            else
-               p%drMax = p%drMax*0.9
-            end if
+         if (acc%ratioTrans > 0.5) then
+            p%drMax = p%drMax*1.1
+         else
+            p%drMax = p%drMax*0.9
          end if
 
-         if (p%lambda <= p%lBox) then
-            if (acc%ratioRot > 0.5) then
-               p%lambda = p%lambda*1.1
-            else
-               p%lambda = p%lambda*0.9
-            end if
+         if (acc%ratioRot > 0.5) then
+            p%lambda = p%lambda*1.1
+         else
+            p%lambda = p%lambda*0.9
          end if
 
-         if (p%dvMax <= p%lBox) then
-            if (acc%ratioVol > 0.5) then
-               p%dvMax = p%dvMax*1.1
-            else
-               p%dvMax = p%dvMax*0.9
-            end if
+         if (acc%ratioVol > 0.5) then
+            p%dvMax = p%dvMax*1.1
+         else
+            p%dvMax = p%dvMax*0.9
          end if
       end if
 

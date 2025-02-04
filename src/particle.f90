@@ -26,7 +26,6 @@ contains
       p%rCut = cfg%rCut
       p%beta = cfg%beta
       p%drMax = cfg%drMax
-      p%dvMax = cfg%dvMax
       p%lambda = cfg%lambda
       p%setup = cfg%setup
       p%q = cfg%q
@@ -37,6 +36,9 @@ contains
       p%rho = p%eta/p%v0
       p%vOld = p%nparticles/p%rho
       p%lBox = (p%vOld)**third
+
+      p%dvMax = cfg%dvMax * p%vOld
+
 
 
 

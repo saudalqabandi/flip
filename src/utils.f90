@@ -64,16 +64,27 @@ contains
       ! call system(cmd)
    end subroutine createOutputDir
 
+   ! du(k) = du(k)*rangeRanNum(-p%lambda, p%lambda)
    subroutine ranVec(vec)
-      real(8) :: ran
+      real(8) :: ran,norm,sum
       real(8), dimension(3), intent(out) :: vec
       integer :: i
 
-      do i = 1, 3
-         ran = ranNum()
-         vec(i) = ran
+      norm=2
+      do while (norm > 1.0)
+         sum=0
+         do i = 1,3
+            ran = ranNum()
+            vec(i) = 2*(ran - 0.5)
+            sum=sum+vec(i)**2
+         end do
+         norm=sum
       end do
-      vec = vec/sqrt(sum(vec**2))
+      norm=sqrt(norm)
+      do i = 1,3
+         vec(i) = vec(i)/norm
+      end do
+
    end subroutine ranVec
 
    subroutine saveVTU(p, cfg, step)
@@ -248,6 +259,8 @@ contains
 
       write (10, '(A)') trim(adjustl(nChar))
       write (10, '(A)') 'Spherocylinder Position and Orientation'
+
+
 
       do i=1,p%nParticles
          write (10, '(A, 3F10.5, 3F10.5)') 'SC ', p%r(i, 1), p%r(i, 2), p%r(i, 3), p%u(i, 1), p%u(i, 2), p%u(i, 3)

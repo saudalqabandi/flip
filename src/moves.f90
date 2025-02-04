@@ -27,7 +27,8 @@ contains
       call ranVec(du)
 
       do k = 1, 3
-         du(k) = du(k)*rangeRanNum(-p%lambda, p%lambda)
+         ! du(k) = du(k)*rangeRanNum(-p%lambda, p%lambda)
+         du(k) = du(k)*p%lambda
       end do
 
       uiNew = p%u(i, :) + du
