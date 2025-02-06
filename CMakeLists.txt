@@ -14,11 +14,19 @@ add_executable(flip ${SOURCES})
 
 # Find pFUnit
 find_package(pFUnit REQUIRED)
-# enable_testing()
+enable_testing()
 
-# add_subdirectory(src)
+add_subdirectory(src)
 
-# add_pfunit_ctest (flip_tests
-#   TEST_SOURCES tests/test_simple.pf
-#   LINK_LIBRARIES flipLib
-#   )
+
+add_pfunit_ctest (flip_random
+  TEST_SOURCES tests/test_random.pf
+  LINK_LIBRARIES flipLib
+  )
+
+  
+
+
+
+
+

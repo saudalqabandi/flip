@@ -62,7 +62,7 @@ program flip
    call createOutputDir(cfg%dirName)
    ! call saveVTU(p, cfg, 0)
    call saveState(p, cfg, 0)
-   call carlosCheckOverlap(p%r, p%u, p)
+   call carlosCheckOverlap(p%r, p%u, p, p%lBox)
    ! call checkOverlap(p%r,p%u,p)
 
    if (p%over) then
@@ -103,7 +103,7 @@ program flip
          uNew(i, :) = uiNew
 
          ! call singleParticleOverlap(rNew, uNew, p, i)
-         call carlosSingleParticleOverlap(rNew, uNew, p, i)
+         call carlosSingleParticleOverlap(rNew, uNew, p, i,p%lBox)
 
          if (p%over) then
             accept = .false.
@@ -130,7 +130,7 @@ program flip
       uNew = p%u
       moveType = 'vol'
 
-      call carlosCheckOverlap(rNew, uNew, p)
+      call carlosCheckOverlap(rNew, uNew, p,lBoxNew)
       ! skip if overlap detected
       if (p%over) then
          accept = .false.
@@ -270,6 +270,5 @@ program flip
    call cpu_time(finish)
    elapsed = finish - start
    print *, 'Elapsed time: ', elapsed, ' seconds'
-
 
 end program flip

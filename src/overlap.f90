@@ -122,16 +122,16 @@ contains
       p%over = .false.
    end subroutine singleParticleOverlap
 
-   subroutine carlosSingleParticleOverlap(r,u,p,i)
+   subroutine carlosSingleParticleOverlap(r,u,p,i,lBox)
       type(Particles), intent(inout) :: p
-      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3),lBox
       integer, intent(in) :: i
 
       integer :: j
 
       do j = 1, p%nParticles
          if (i /= j) then
-            if (carlosPairOverlap(r,u,p,i,j)) then
+            if (carlosPairOverlap(r,u,p,i,j,lBox)) then
                ! print *, 'Overlap detected between particles ', i, ' and ', j
                p%over = .true.
                return
@@ -142,14 +142,14 @@ contains
       p%over = .false.
    end subroutine carlosSingleParticleOverlap
 
-   subroutine carlosCheckOverlap(r,u,p)
+   subroutine carlosCheckOverlap(r,u,p,lBox)
       type(Particles), intent(inout) :: p
-      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3),lBox
       integer :: i, j
 
       do i = 1, p%nParticles
          do j = i + 1, p%nParticles
-            if (carlosPairOverlap(r,u,p,i,j)) then
+            if (carlosPairOverlap(r,u,p,i,j,lBox)) then
                p%over = .true.
                return
             end if
@@ -159,10 +159,10 @@ contains
    end subroutine carlosCheckOverlap
 
 
-   function carlosPairOverlap(r,u,p,i,j) result(overlap)
+   function carlosPairOverlap(r,u,p,i,j,lBox) result(overlap)
       implicit none
       type(Particles), intent(inout) :: p
-      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3)
+      real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3),lBox
       integer, intent(in) :: i, j
       logical :: overlap
       real(8) :: rij(3), rr, dd,dd2, range,ui(3),uj(3)
@@ -171,14 +171,10 @@ contains
       range = 1.0d0 + p%l
       overlap = .false.
 
-      ! if (i==1 .and. j==2) then
-      !    print *, "debugging particles: ",i,j
-      ! end if
-
       rij = r(j,:) - r(i,:)
-      rij = rij - anint(rij/p%lBox)*p%lBox
+      rij = rij - anint(rij/lBox)*lBox
       rr = dot_product(rij,rij)
-      
+
 
       ui = u(i,:)
       uj = u(j,:)
@@ -188,14 +184,8 @@ contains
          dd2 = shortestDistance(rij,ui,uj,p%l*0.5)
 
          if (dd < 1.0) then
-            ! print *, "Overlap, Carlos dd: ",dd
             overlap = .true.
          end if
-
-         ! if (dd2 < 1.0) then
-         !    print *, "Overlap, shortestDistance dd: ",dd2
-         !    overlap = .true.
-         ! end if
 
       end if
 

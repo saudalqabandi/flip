@@ -1,0 +1,94 @@
+module test_random
+   use funit
+   use Utils
+   implicit none
+
+contains
+
+   @test
+   subroutine test_mean()
+      integer :: i
+      real :: randomNumbers(1000),mean,meanSquared
+      do i=1,1000
+         randomNumbers(i) = ranNum()
+      end do
+
+      mean = sum(randomNumbers)/1000.0
+      meanSquared = sum(randomNumbers**2)/1000.0
+
+      @assert_that(mean, is( near(0.5, 0.1) ) )
+      @assert_that(meanSquared, is( near(0.3, 0.1) ) )
+   end subroutine test_mean
+
+   @test
+   subroutine test_ranVec_mean()
+      real(8) :: u(1000,3)
+      real:: u1, u2, u3,tol,expected
+      integer :: i
+
+      do i=1,1000
+         call ranVec(u(i,:))
+      end do
+
+
+      u1 = sum(u(:,1))/1000.0
+      u2 = sum(u(:,2))/1000.0
+      u3 = sum(u(:,3))/1000.0
+
+      tol = 0.05
+      expected = 0.0
+
+      @assert_that(u1, is( near(expected,tol) ) )
+      @assert_that(u2, is( near(expected,tol) ) )
+      @assert_that(u3, is( near(expected,tol) ) )
+
+   end subroutine test_ranVec_mean
+
+   @test
+   subroutine test_ranVec_meanSquared()
+
+      real(8) :: u(1000,3)
+      real:: u1Squared, u2Squared, u3Squared,tol,expected
+      integer :: i
+
+      do i=1,1000
+         call ranVec(u(i,:))
+      end do
+
+      u1Squared = sum(u(:,1)**2)/1000.0
+      u2Squared = sum(u(:,2)**2)/1000.0
+      u3Squared = sum(u(:,3)**2)/1000.0
+
+      tol = 0.05
+      expected = 1.0/3.0
+
+      @assert_that(u1Squared, is( near(expected,tol) ) )
+      @assert_that(u2Squared, is( near(expected,tol) ) )
+      @assert_that(u3Squared, is( near(expected,tol) ) )
+
+   end subroutine test_ranVec_meanSquared
+
+   @test
+   subroutine test_ranVec_meanFourth()
+      real(8) :: u(1000,3)
+      real:: u1Fourth, u2Fourth, u3Fourth,tol,expected
+      integer :: i
+
+      do i=1,1000
+         call ranVec(u(i,:))
+      end do
+
+      u1Fourth = sum(u(:,1)**4)/1000.0
+      u2Fourth = sum(u(:,2)**4)/1000.0
+      u3Fourth = sum(u(:,3)**4)/1000.0
+
+      tol = 0.05
+      expected = 1.0/5.0
+
+      @assert_that(u1Fourth, is( near(expected,tol) ) )
+      @assert_that(u2Fourth, is( near(expected,tol) ) )
+      @assert_that(u3Fourth, is( near(expected,tol) ) )
+
+   end subroutine test_ranVec_meanFourth
+
+end module test_random
