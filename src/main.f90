@@ -16,7 +16,7 @@ program flip
    real(8), allocatable :: rNew(:, :), uNew(:, :), riNew(:), uiNew(:)
    real(8) :: rij(3)
    integer :: k, n, i, blockCount, j
-   logical :: accept
+   logical :: accept,dirExists
    character(len=25) :: moveType
    integer :: ii, jj, kk, count, nrot
    real(8) :: frac, seval(3), sevec(3, 3), qSum(3, 3), qRun(3, 3), sq, sqSq
@@ -55,8 +55,11 @@ program flip
    p = initParticles(cfg)
 
    if (cfg%setup == 'restart') then
-      cfg%dirName = trim(cfg%dirName)//"_restart"
-      print *, 'Restart directory: ', cfg%dirName
+      inquire(file=trim(cfg%dirName)//'/config.txt', exist=dirExists)
+      if (dirExists) then
+         cfg%dirName = trim(cfg%dirName)//"_restart"
+         print *, 'Restart directory: ', cfg%dirName
+      end if
    end if
 
    call createOutputDir(cfg%dirName)
@@ -264,8 +267,8 @@ program flip
 
    call printChar('-',80)
 
-   call copyFile('log.out', trim(cfg%dirName)//'/log.out')
-   call copyFile('config.cfg',trim(cfg%dirName)//'/config.txt')
+   ! call copyFile('log.out', trim(cfg%dirName)//'/log.out')
+   ! call copyFile('config.cfg',trim(cfg%dirName)//'/config.txt')
 
    call cpu_time(finish)
    elapsed = finish - start

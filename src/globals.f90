@@ -11,7 +11,7 @@ module globals
    type :: ConfigFile
       integer :: nParticles, seed, nCycles, nDump, nBlock, nOrder, nAdjust
       real(8) :: l, pressure, eta, w0, kappa, rCut, beta, drMax, dvMax, lambda
-      character(len=50) :: setup, dirName, fileName,restartStep
+      character(len=50) :: setup, dirName, fileName,restartStep,restartDir
       real(8), allocatable :: q(:)
       logical :: seeded
    end type ConfigFile

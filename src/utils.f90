@@ -362,14 +362,15 @@ contains
          if (pos > 0) then
             var = trim(adjustl(line(1:pos - 1)))
             value = trim(adjustl(line(pos + 1:)))
+            print *, trim(var), trim(value)
 
-            ! read(line,*) var, value
             select case (var)
-             case ('lBox=')
+             case ('lBox')
                read(value,*) p%lBox
-             case ('eta=')
+             case ('eta')
                read(value,*) p%eta
-             case ('nParticles=')
+               print *, 'res eta: ', p%eta
+             case ('nParticles')
                read(value,*) p%nParticles
             end select
          end if
@@ -427,8 +428,6 @@ contains
 
       sq = sq - 2*eig%seval(2)
       sqSq = sqSq + 4*eig%seval(2)**2
-
-
    end function calcEigen
 
 

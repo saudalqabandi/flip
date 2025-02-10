@@ -140,11 +140,12 @@ contains
 
 
       ! file = trim(cfg%dirName)//'/coords/'//trim(cfg%fileName)//'_'//trim(adjustl(cfg%restartStep))//'.xyz'
-      dir = trim(cfg%dirName)
+      dir = trim(cfg%restartDir)
       file = trim(cfg%fileName)//'_'//trim(adjustl(cfg%restartStep))
       print *, 'Reading file: ', file
       ! call readVTU(file,p)
 
+      ! print *, 'Reading state from: ', dir, file
       call readState(dir,file,p)
 
       ! recalculate parameters

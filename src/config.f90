@@ -78,6 +78,9 @@ contains
                read (value, *) cfg%nAdjust
              case("restartStep")
                read(value, *) cfg%restartStep
+             case("restartDir")
+               call trimQuotes(value)
+               read(value, *) cfg%restartDir
              case ("q")
                value = trim(adjustl(value))
                numElements = count([(value(i:i) == ',', i=1, len(value))]) + 1

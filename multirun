@@ -1,0 +1,46 @@
+#!/bin/bash
+
+pressures=("$@")
+
+if [ ! -d "results" ]; then
+    mkdir results
+    echo "pressure = ${pressures[@]}" > results/pressures.txt
+fi
+
+first=true
+for pressure in "${pressures[@]}"; do
+    if (( $(echo "$pressure >= 5" | bc -l) )) && (( $(echo "$pressure < 6" | bc -l) )); then
+        sed -i '' "s/^nCycles = .*/nCycles = 500000/" config.cfg
+    else
+        sed -i '' "s/^nCycles = .*/nCycles = 250000/" config.cfg
+    fi
+
+    nCycles=$(grep "^nCycles = " config.cfg | awk '{print $3}')
+    echo "nCycles = $nCycles"
+
+    sed -i '' "s/^pressure = .*/pressure = $pressure/" config.cfg
+    dirPressure=$(echo $pressure | tr '.' '_')
+    dirName="pressure-$dirPressure"
+
+    if $first; then
+        sed -i '' "s/^setup = .*/setup = \"cubic\"/" config.cfg
+        first=false
+    else
+        sed -i '' "s/^setup = .*/setup = \"restart\"/" config.cfg
+    fi
+    
+    sed -i '' "s/^dirName = .*/dirName = \"$dirName\"/" config.cfg
+    # ./build/flip
+
+    cp config.cfg $dirName/config.txt
+    cp log.out $dirName/log.out
+
+    rm log.out
+
+    restartDir="$dirName"
+    echo "restartDir = $restartDir"
+    sed -i '' "s/^restartDir = .*/restartDir = \"$restartDir\"/" config.cfg
+done
+
+
+mv pressure-* results

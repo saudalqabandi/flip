@@ -1,30 +1,13 @@
 module test_simple
    use funit
    use Utils
-   use Config
+   use Overlap
    implicit none
 
 contains
 
-   @test
-   subroutine test_assert_true_and_false()
-      @assertTrue(1 == 1)
-      @assertFalse(1 == 2)
-   end subroutine test_assert_true_and_false
-
-   @test
-   subroutine test_ranNum()
-      @assertTrue( ranNum() >= 0.0 )
-   end subroutine test_ranNum
 
 
-   @test
-   subroutine test_readConfig()
-      type(ConfigFile):: cfg
-      call readConfig('tests/test_config.cfg', cfg)
-      print *, cfg%l
-      @assertTrue(cfg%l == 5)
-   end subroutine test_readConfig
 
 
 

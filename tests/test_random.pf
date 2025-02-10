@@ -90,5 +90,4 @@ contains
       @assert_that(u3Fourth, is( near(expected,tol) ) )
 
    end subroutine test_ranVec_meanFourth
-
 end module test_random
