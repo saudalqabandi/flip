@@ -21,18 +21,24 @@ contains
       type(Particles), intent(inout) :: p
       integer, intent(in) :: i
       real(8), intent(inout) :: uiNew(3)
-      real(8) :: du(3)
+      real(8) :: du(3),uNorm(3)
       integer :: k
 
+      ! call ranVec(du)
+
+      ! do k = 1, 3
+      !    ! du(k) = du(k)*rangeRanNum(-p%lambda, p%lambda)
+      !    du(k) = du(k)*p%lambda
+      ! end do
+
+      ! uiNew = p%u(i, :) + du
+      ! uiNew = uiNew/sqrt(sum(uiNew**2))
+
       call ranVec(du)
+      uiNew = p%u(i, :) + du*p%lambda
+      uNorm = dot_product(uiNew, uiNew)
+      uiNew = uiNew/sqrt(uNorm)
 
-      do k = 1, 3
-         ! du(k) = du(k)*rangeRanNum(-p%lambda, p%lambda)
-         du(k) = du(k)*p%lambda
-      end do
-
-      uiNew = p%u(i, :) + du
-      uiNew = uiNew/sqrt(sum(uiNew**2))
    end subroutine rotateMove
 
    subroutine flipMove(p, i, uiNew)
