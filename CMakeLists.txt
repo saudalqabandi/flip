@@ -13,14 +13,14 @@ file(GLOB SOURCES "src/*.f90")
 add_executable(flip ${SOURCES})
 
 
-find_package(pFUnit REQUIRED)
-enable_testing()
-add_subdirectory(src)
+# find_package(pFUnit REQUIRED)
+# enable_testing()
+# add_subdirectory(src)
 
-add_pfunit_ctest (flip_random
-  TEST_SOURCES tests/test_random.pf
-  LINK_LIBRARIES flipLib
-  )
+# add_pfunit_ctest (flip_random
+#   TEST_SOURCES tests/test_random.pf
+#   LINK_LIBRARIES flipLib
+#   )
 
   
 

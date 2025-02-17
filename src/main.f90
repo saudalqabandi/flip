@@ -54,6 +54,7 @@ program flip
    ! initialize the particles
    p = initParticles(cfg)
 
+
    if (cfg%setup == 'restart') then
       inquire(file=trim(cfg%dirName)//'/config.txt', exist=dirExists)
       if (dirExists) then

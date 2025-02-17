@@ -9,4 +9,4 @@ fort.20
 *.vtk
 *.vtp
 *.dat
-results
+results*

@@ -312,7 +312,7 @@ contains
       type(ConfigFile), intent(in) :: cfg
       integer, intent(in) :: step
 
-      character(len=50) :: stepChar, nChar,etaChar,lBox ,fileName
+      character(len=50) :: stepChar, nChar,etaChar,lBox ,fileName,drmaxChar,dvmaxChar,lambdaChar
       character(len=100) :: fullPath
       integer :: ioStatus
 
@@ -321,6 +321,9 @@ contains
       write (nChar, '(I0)') p%nParticles
       write(etaChar,'(F10.5)') p%eta
       write(lBox,'(F10.5)') p%lBox
+      write(drmaxChar,'(F10.5)') p%drMax
+      write(dvmaxChar,'(F10.5)') p%dvMax
+      write(lambdaChar,'(F10.5)') p%lambda
 
 
       fileName = trim(cfg%fileName)//'_'//trim(stepChar)//'.dat'
@@ -336,6 +339,9 @@ contains
       write (10, '(A, A)') 'lBox=', trim(adjustl(lBox))
       write (10, '(A, A)') 'eta=', trim(adjustl(etaChar))
       write (10, '(A, A)') 'nParticles=', trim(adjustl(nChar))
+      write (10, '(A, A)') 'drMax=', trim(adjustl(drmaxChar))
+      write (10, '(A, A)') 'dvMax=', trim(adjustl(dvmaxChar))
+      write (10, '(A, A)') 'lambda=', trim(adjustl(lambdaChar))
 
    end subroutine saveProps
 
@@ -355,7 +361,7 @@ contains
          stop
       end if
 
-      do i = 1, 4
+      do i = 1, 7
          read(10,'(A)') line
          if (line == '') exit ! check if at the end of the file
          pos = index(line, '=')
@@ -369,9 +375,14 @@ contains
                read(value,*) p%lBox
              case ('eta')
                read(value,*) p%eta
-               print *, 'res eta: ', p%eta
              case ('nParticles')
                read(value,*) p%nParticles
+             case ('drMax')
+               read(value,*) p%drMax
+             case ('dvMax')
+               read(value,*) p%dvMax
+             case ('lambda')
+               read(value,*) p%lambda
             end select
          end if
       end do

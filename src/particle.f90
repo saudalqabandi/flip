@@ -39,9 +39,6 @@ contains
 
       p%dvMax = cfg%dvMax * p%vOld
 
-
-
-
       p%over = .false.
 
       ! setup the particles
