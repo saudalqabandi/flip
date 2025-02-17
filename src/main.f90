@@ -237,6 +237,8 @@ program flip
    print *, 'Final potential: ', p%potential
    call printChar('=', 40)
 
+   call carlosCheckOverlap(p%r, p%u, p, p%lBox)
+
    call saveState(p, cfg, cfg%nCycles)
 
    call printChar('-', 40)

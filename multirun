@@ -11,8 +11,11 @@ first=true
 for pressure in "${pressures[@]}"; do
     if (( $(echo "$pressure >= 5" | bc -l) )) && (( $(echo "$pressure < 6" | bc -l) )); then
         sed -i '' "s/^nCycles = .*/nCycles = 500000/" config.cfg
+        sed -i '' "s/^restartStep = .*/restartStep = 500000/" config.cfg
+
     else
         sed -i '' "s/^nCycles = .*/nCycles = 250000/" config.cfg
+        sed -i '' "s/^restartStep = .*/restartStep = 250000/" config.cfg
     fi
 
     nCycles=$(grep "^nCycles = " config.cfg | awk '{print $3}')
@@ -24,13 +27,14 @@ for pressure in "${pressures[@]}"; do
 
     if $first; then
         sed -i '' "s/^setup = .*/setup = \"cubic\"/" config.cfg
+        sed -i '' "s/^restartStep = .*/restartStep = 250000/" config.cfg
         first=false
     else
         sed -i '' "s/^setup = .*/setup = \"restart\"/" config.cfg
     fi
     
     sed -i '' "s/^dirName = .*/dirName = \"$dirName\"/" config.cfg
-    # ./build/flip
+    ./build/flip
 
     cp config.cfg $dirName/config.txt
     cp log.out $dirName/log.out

@@ -1,5 +1,6 @@
 module Overlap
    use globals
+   use omp_lib
    implicit none
 
 contains
@@ -126,36 +127,64 @@ contains
       type(Particles), intent(inout) :: p
       real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3),lBox
       integer, intent(in) :: i
-
       integer :: j
+      logical :: local_over
 
+      p%over = .false.
+
+      ! Parallelize the loop with OpenMP
+      !$omp parallel private(j, local_over) shared(p, r, u, i, lBox)
+      local_over = .false.
+      !$omp do
       do j = 1, p%nParticles
+         if (local_over) cycle
          if (i /= j) then
             if (carlosPairOverlap(r,u,p,i,j,lBox)) then
                ! print *, 'Overlap detected between particles ', i, ' and ', j
-               p%over = .true.
-               return
+               local_over = .true.
+               !$omp flush(local_over)
+               !$omp cancel do
             end if
          end if
       end do
+      !$omp end do
 
-      p%over = .false.
+      !$omp critical
+      if (local_over) p%over = .true.
+      !$omp end critical
+
+      !$omp end parallel
    end subroutine carlosSingleParticleOverlap
 
    subroutine carlosCheckOverlap(r,u,p,lBox)
       type(Particles), intent(inout) :: p
       real(8), intent(in) :: r(p%nParticles, 3), u(p%nParticles, 3),lBox
       integer :: i, j
+      logical :: local_over
 
+
+      p%over = .false.
+      ! Parallelize the outer loop with OpenMP
+      !$omp parallel private(i, j, local_over) shared(p, r, u, lBox)
+      local_over = .false.
+      !$omp do
       do i = 1, p%nParticles
          do j = i + 1, p%nParticles
+            if (local_over) cycle
             if (carlosPairOverlap(r,u,p,i,j,lBox)) then
-               p%over = .true.
-               return
+               local_over = .true.
+               !$omp flush(local_over)
+               !$omp cancel do
             end if
          end do
       end do
-      p%over = .false.
+      !$omp end do
+
+      !$omp critical
+      if (local_over) p%over = .true.
+      !$omp end critical
+
+      !$omp end parallel
    end subroutine carlosCheckOverlap
 
 
