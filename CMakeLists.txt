@@ -9,6 +9,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -march=native")
 endif()
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 file(GLOB SOURCES "src/*.f90")
 add_executable(flip ${SOURCES})
 

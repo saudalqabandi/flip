@@ -30,7 +30,7 @@ for pressure in "${pressures[@]}"; do
     fi
     
     sed -i '' "s/^dirName = .*/dirName = \"$dirName\"/" config.cfg
-    # ./build/flip
+    ./build/flip 2>&1 | tee log.out
 
     cp config.cfg $dirName/config.txt
     cp log.out $dirName/log.out

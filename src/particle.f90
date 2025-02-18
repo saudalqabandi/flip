@@ -145,6 +145,9 @@ contains
       ! print *, 'Reading state from: ', dir, file
       call readState(dir,file,p)
 
+      p%vOld = p%lBox**3
+      p%rho = p%eta/p%v0
+
       ! recalculate parameters
       ! p%rho = p%eta/p%v0
       ! p%vOld = p%nparticles/p%rho

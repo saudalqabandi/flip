@@ -361,8 +361,9 @@ contains
          stop
       end if
 
-      do i = 1, 7
-         read(10,'(A)') line
+      do while (line /= "")
+         read(10,'(A)',iostat=ioStatus) line
+         if (ioStatus /= 0) exit
          if (line == '') exit ! check if at the end of the file
          pos = index(line, '=')
          if (pos > 0) then
@@ -386,6 +387,31 @@ contains
             end select
          end if
       end do
+      ! do i = 1, 7
+      !    read(10,'(A)') line
+      !    if (line == '') exit ! check if at the end of the file
+      !    pos = index(line, '=')
+      !    if (pos > 0) then
+      !       var = trim(adjustl(line(1:pos - 1)))
+      !       value = trim(adjustl(line(pos + 1:)))
+      !       print *, trim(var), trim(value)
+
+      !       select case (var)
+      !        case ('lBox')
+      !          read(value,*) p%lBox
+      !        case ('eta')
+      !          read(value,*) p%eta
+      !        case ('nParticles')
+      !          read(value,*) p%nParticles
+      !        case ('drMax')
+      !          read(value,*) p%drMax
+      !        case ('dvMax')
+      !          read(value,*) p%dvMax
+      !        case ('lambda')
+      !          read(value,*) p%lambda
+      !       end select
+      !    end if
+      ! end do
    end subroutine readProps
 
 
