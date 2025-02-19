@@ -1,46 +1,58 @@
 #!/bin/bash
 
-pressures=("$@")
+while getopts ":o:f:" opt; do
+    case $opt in
+        f)
+            if [[ "$OPTARG" == "true" || "$OPTARG" == "false" ]]; then
+                first=$OPTARG
+            else
+                echo "Invalid value for -f. Use 'true' or 'false'." >&2
+                exit 1
+            fi
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
 
-if [ ! -d "results" ]; then
-    mkdir results
-    echo "pressure = ${pressures[@]}" > results/pressures.txt
+if [ -z "$first" ]; then
+    echo "Setup type is required. Use -f to specify the setup type."
+    exit 1
 fi
 
-first=true
-for pressure in "${pressures[@]}"; do
-    if (( $(echo "$pressure >= 5" | bc -l) )) && (( $(echo "$pressure < 6" | bc -l) )); then
-        sed -i '' "s/^nCycles = .*/nCycles = 500000/" config.cfg
-    else
-        sed -i '' "s/^nCycles = .*/nCycles = 250000/" config.cfg
-    fi
+pressures=("$@")
+if [ ! -d "results" ]; then
+    mkdir results
+fi
+echo "pressure = ${pressures[@]}" > results/pressures.txt
 
-    nCycles=$(grep "^nCycles = " config.cfg | awk '{print $3}')
-    echo "nCycles = $nCycles"
 
-    sed -i '' "s/^pressure = .*/pressure = $pressure/" config.cfg
-    dirPressure=$(echo $pressure | tr '.' '_')
-    dirName="pressure-$dirPressure"
+for pressure in ${pressures[@]}; do
+    echo "Pressure: $pressure"
+    sed -i '' "s/pressure = .*/pressure = $pressure/" config.cfg
+    dirName="pressure-${pressure//./_}"
 
-    if $first; then
-        sed -i '' "s/^setup = .*/setup = \"cubic\"/" config.cfg
+    if [ "$first" == "true" ]; then
+        sed -i '' "s/setup = .*/setup = cubic/" config.cfg
+        restartDir=$dirName
         first=false
     else
-        sed -i '' "s/^setup = .*/setup = \"restart\"/" config.cfg
-    fi
+        sed -i '' "s/setup = .*/setup = restart/" config.cfg
+        restartDir=$(echo $restartDir | tr -d '"')
+        echo "Restart directory: $restartDir"
     
-    sed -i '' "s/^dirName = .*/dirName = \"$dirName\"/" config.cfg
-    ./build/flip 2>&1 | tee log.out
+        last_file=$(ls -1 "$restartDir/props/" | sort -t_ -k2,2n | tail -n 1)
+    fi
 
-    cp config.cfg $dirName/config.txt
-    cp log.out $dirName/log.out
-
-    rm log.out
-
-    restartDir="$dirName"
-    echo "restartDir = $restartDir"
-    sed -i '' "s/^restartDir = .*/restartDir = \"$restartDir\"/" config.cfg
+    ./run Release
+    restartDir=$dirName
 done
-
 
 mv pressure-* results
