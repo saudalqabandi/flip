@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 
+
 def read_config(file):
     with open(file, "r") as f:
         config = f.read()
@@ -11,7 +12,6 @@ def read_config(file):
 
     config_dict = {}
     for line in config:
-        
         line = [x.strip() for x in line.split("=")]
 
         if len(line) != 2:
@@ -56,7 +56,7 @@ def main():
         if i != 0:
             prev = pressures[i - 1]
             config["setup"] = "restart"
-            config["restartDir"] = f'"pressure-{str(prev).replace('.', '_')}"'
+            config["restartDir"] = f'"pressure-{str(prev).replace(".", "_")}"'
             print(f"Restarting from {config['restartDir']}")
         else:
             config["setup"] = f'"{first}"'
@@ -64,6 +64,8 @@ def main():
         config["dirName"] = f'"pressure-{str(p).replace(".", "_")}"'
 
         save_config(config, "config.cfg")
+
+        os.system("./build/flip")
 
 
 if __name__ == "__main__":
