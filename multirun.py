@@ -30,6 +30,10 @@ def save_config(config, file):
             f.write(f"{k} = {v}\n")
 
 
+def trimQuotes(s):
+    return s.replace('"', "").replace("'", "")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run flip at multiple pressures")
     parser.add_argument(
@@ -53,11 +57,11 @@ def main():
         print(f"Running flip at pressure {p}")
 
         config["pressure"] = p
-        if i != 0:
+        if i > 0:
             prev = pressures[i - 1]
             config["setup"] = "restart"
             config["restartDir"] = f'"pressure-{str(prev).replace(".", "_")}"'
-            print(f"Restarting from {config['restartDir']}")
+            config["restartStep"] = config["nCycles"]
         else:
             config["setup"] = f'"{first}"'
 
