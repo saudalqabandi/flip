@@ -10,3 +10,4 @@ fort.20
 *.vtp
 *.dat
 results*
+*.backup
