@@ -433,6 +433,58 @@ contains
 
    end subroutine readState
 
+   subroutine saveCSV(p, rhoAvg, errorRho, cfg, step)
+    type(Particles), intent(in) :: p
+    type(ConfigFile), intent(in) :: cfg
+    integer, intent(in) :: step
+    real(8), intent(in) :: rhoAvg, errorRho
+    real(8) :: errorEta,etaAvg
+    character(len=50) :: fileName
+    character(len=100) :: fullPath
+    integer :: ioStatus, unit, fileSize
+
+    etaAvg = rhoAvg * p%v0 
+    errorEta = errorRho * p%v0
+
+    fileName = 'output.csv'
+    fullPath = trim(cfg%dirName)//'/'//trim(fileName)
+
+    ! Open the file in append mode
+    open (unit=10, file=fullPath, status='unknown', action='write', position='append', iostat=ioStatus)
+    if (ioStatus /= 0) then
+        print *, 'Error opening file:', fullPath
+        stop
+    end if
+
+    ! Check if the file is empty and write the header if it is
+    inquire(unit=10, size=fileSize)
+    if (fileSize == 0) then
+        write (10, '(A)') 'step,etaAvg,errorEta,rhoAvg,errorRho,lBox,drMax,dvMax,lambda'
+    end if
+
+    ! Write the data
+    write (10, '(I0)', advance='no') step
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') etaAvg
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') errorEta
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') rhoAvg
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') errorRho
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') p%lBox
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') p%drMax
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') p%dvMax
+    write (10, '(A)', advance='no') ','
+    write (10, '(F10.5)', advance='no') p%lambda
+    write (10, '(A)') ''
+
+    close (10)
+end subroutine saveCSV
+
 
 
    function calcEigen(p) result(eig)

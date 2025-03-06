@@ -211,6 +211,13 @@ program flip
          write (*, *) 'Run average volume = ', tmpVolume
          write (*, *) 'Run average density = ', p%nParticles/tmpVolume
          write (20, '(i7, 1x, 2(f12.3, 1x))') blockCount, blockVolume, tmpVolume
+
+         rhoAvg = totalDensity/blockCount
+         rhoAvgSq = totalDensitySq/blockCount
+         errorRho = sqrt((rhoAvgSq - rhoAvg**2)/real(blockCount - 1))
+
+         call saveCSV(p,rhoAvg,errorRho,cfg,n)
+
          call zeroAccumalators(acc)
       end if
 
